@@ -39,4 +39,5 @@ jobs:
       with:
         version: latest
         skip-cache: true
+        working-directory: service
     - run: make go/test
