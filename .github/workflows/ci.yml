@@ -35,4 +35,8 @@ jobs:
         go-version-file: 'service/go.mod'
 
     # Run unit tests and linters.
+    - uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        skip-cache: true
     - run: make go/test
