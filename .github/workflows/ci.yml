@@ -16,8 +16,23 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: hashicorp/setup-terraform@v2
+
     # Initialize terraform with no remote state store and
     # validate resources.
     - run: terraform init -backend=false
     - run: terraform fmt -recursive -check
     - run: terraform validate
+
+  service:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: service
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-go@v3
+      with:
+        go-version-file: 'go.mod'
+
+    # Run unit tests and linters.
+    - run: make go/test
