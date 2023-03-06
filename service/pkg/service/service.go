@@ -112,7 +112,7 @@ func (s *Service) WaitSignal() {
 
 	// wait for signal to be received
 	<-ch
-	log.Info().Msg("stop signal received, starting shut down...")
+	log.Info().Msg("stop signal received, starting shut down")
 }
 
 // Exit the current process while attempting to run any of the Service's exit handlers.
