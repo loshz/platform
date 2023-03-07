@@ -1,13 +1,14 @@
 package config
 
 const (
-	// The level at which the service should write application
+	// The level at which the service should write application logs.
 	KeyLogLevel = "log.level"
 
-	// The port to expose the HTTP/S server on
-	KeyHTTPPort = "http.port"
+	// Service related config.
+	KeyServiceStartupTimeout = "service.startup.timeout"
 
-	// HTTP/S server timeouts
+	// HTTPS/S server related fields/timeouts.
+	KeyHTTPPort         = "http.port"
 	KeyHTTPReadTimeout  = "http.read.timeout"
 	KeyHTTPWriteTimeout = "http.write.timeout"
 	KeyHTTPIdleTimeout  = "http.idle.timeout"

@@ -20,5 +20,6 @@ func run(s *service.Service) error {
 			log.Info().Msg("ticking...")
 		}
 	}()
+
 	return nil
 }
