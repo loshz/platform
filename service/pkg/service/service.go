@@ -28,7 +28,10 @@ const (
 
 // Service represents a platform application.
 type Service struct {
-	// uuid of service including prefix.
+	// Explicit service name.
+	Name string
+
+	// UUID of an individual service including Name prefix.
 	ID string
 
 	// server configuration information
@@ -53,6 +56,7 @@ func New(name string) *Service {
 	// TODO: init deps here- config, DBs, etc.
 
 	return &Service{
+		Name:         name,
 		ID:           fmt.Sprintf("%s-%s", name, uuid.New()),
 		Config:       config.New(),
 		exitHandlers: make(map[string]ExitHandler),
@@ -86,6 +90,9 @@ func (s *Service) Run(run RunFunc) {
 
 	// Start the local http server.
 	s.startLocalHTTP(s.Config.Int(config.KeyHTTPPort))
+
+	// Register service level Prometheus metrics.
+	s.registerDefaultMetrics()
 
 	// Wait for an exit signal.
 	s.waitSignal()

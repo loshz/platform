@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	s := service.New("reqd")
+	s := service.New("trafficd")
 	s.Run(run)
 }
 
