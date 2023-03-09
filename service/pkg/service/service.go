@@ -73,7 +73,7 @@ func (s *Service) Run(run RunFunc) {
 	s.initDefaultConfig()
 
 	// Configure global logger.
-	plog.ConfigureGlobalLogging(s.Config.String(config.KeyLogLevel), s.ID, version.Version)
+	plog.ConfigureGlobalLogging(s.Config.String(config.KeyLogLevel), s.ID, version.Build)
 
 	// Attempt to start the service.
 	s.start(run)

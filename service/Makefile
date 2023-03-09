@@ -18,7 +18,7 @@ docker/push:
 go/build: ./cmd/*
 	@for CMD in $^; do \
 		CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOBIN=$(BIN_DIR) go install \
-		  --ldflags="-X github.com/loshz/platform/pkg/version.Version=$(BUILD_NUMBER)" ./$${CMD}; \
+		  --ldflags="-X github.com/loshz/platform/pkg/version.Build=$(BUILD_NUMBER)" ./$${CMD}; \
 	done
 
 go/lint:

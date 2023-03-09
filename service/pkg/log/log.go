@@ -7,7 +7,7 @@ import (
 )
 
 // ConfigureGlobalLogging parses a given log level and sets it globally.
-func ConfigureGlobalLogging(level, service, version string) {
+func ConfigureGlobalLogging(level, service, build string) {
 	// parse and set the global log level
 	lvl, err := zerolog.ParseLevel(level)
 	if err != nil {
@@ -20,6 +20,6 @@ func ConfigureGlobalLogging(level, service, version string) {
 	// configure global logger defaults
 	log.Logger = log.Logger.With().Fields(map[string]interface{}{
 		"service": service,
-		"version": version,
+		"version": build,
 	}).Logger()
 }

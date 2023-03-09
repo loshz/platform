@@ -22,5 +22,5 @@ var ServiceInfo = prometheus.NewCounterVec(
 func (s *Service) registerDefaultMetrics() {
 	prometheus.Register(ServiceInfo)
 
-	ServiceInfo.WithLabelValues(s.Name, s.ID, version.Version).Inc()
+	ServiceInfo.WithLabelValues(s.Name, s.ID, version.Build).Inc()
 }

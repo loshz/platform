@@ -2,7 +2,7 @@
 // data at build time.
 package version
 
-// Version represents the current build number used in `service.Server`.
+// Build represents the current build number of a service.
 //
 // Use `--ldflags` at build time to set this value.
-var Version = "dev"
+var Build = "dev"
