@@ -34,21 +34,15 @@ type Service struct {
 	// UUID of an individual service including Name prefix.
 	ID string
 
-	// server configuration information
+	// Service configuration.
 	Config *config.Config
 
-	// local HTTP server
+	// Local HTTP server.
 	httpServer *http.Server
 
-	// service specific exit handlers
+	// Service specific exit handlers.
 	exitHandlers   map[string]ExitHandler
 	exitHandlersMu sync.RWMutex
-
-	// TODO: add default service deps
-	//  - Queue consumers
-	//  - Metric gauges
-	//  - TCP listeners
-	//  - etc.
 }
 
 // New creates a named Service with configurable dependencies.
@@ -75,10 +69,6 @@ type RunFunc func(*Service) error
 // By default, it will start the local web server and wait for a stop
 // signal to be received before attempting to gracefully shutdown.
 func (s *Service) Run(run RunFunc) {
-	// TODO: start default tasks
-	//  - connect queues
-	//  - etc.
-
 	// Initialize required service config.
 	s.initDefaultConfig()
 
@@ -115,7 +105,8 @@ func (s *Service) waitSignal() {
 
 // Exit the current process while attempting to run any of the Service's exit handlers.
 //
-// Each exit handler will run in its own goroutine and will force exit after 30s.
+// Each exit handler will run in its own goroutine and will force exit after 30s
+// regardless of completion.
 func (s *Service) Exit(status int) {
 	s.exitHandlersMu.RLock()
 	defer s.exitHandlersMu.RUnlock()
@@ -126,7 +117,10 @@ func (s *Service) Exit(status int) {
 	defer cancel()
 
 	// Force exit after deadline.
-	time.AfterFunc(exitWait, func() { os.Exit(status) })
+	time.AfterFunc(exitWait, func() {
+		log.Error().Msgf("service shutdown took longer than %s, aborting", exitWait)
+		os.Exit(status)
+	})
 
 	// Stop the local http server before calling exit handlers in case
 	// we need to process any remaining data.
@@ -141,7 +135,7 @@ func (s *Service) Exit(status int) {
 		wg.Add(1)
 		go func(name string, fn ExitHandler) {
 			defer wg.Done()
-			fn(deadline)
+			fn()
 			log.Info().Msgf("exit handler finished: %s", name)
 		}(name, fn)
 	}
@@ -191,13 +185,15 @@ func (s *Service) startLocalHTTP(port int) {
 // as a failed start.
 func (s *Service) start(run RunFunc) {
 	// Configure startup timeout.
-	ctx, cancel := context.WithTimeout(context.Background(), s.Config.Duration(config.KeyServiceStartupTimeout))
+	timeout := s.Config.Duration(config.KeyServiceStartupTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
+	// Wait for the context to exceed the given deadline, and exit if so.
 	go func() {
 		<-ctx.Done()
 		if ctx.Err() == context.DeadlineExceeded {
-			log.Error().Msg("service took too long to start, aborting")
+			log.Error().Msgf("service startup took longer than the configured %s timeout, aborting", timeout)
 			s.Exit(ExitError)
 		}
 	}()
@@ -212,7 +208,7 @@ func (s *Service) start(run RunFunc) {
 }
 
 // ExitHandler is a timed function ran only on service shutdown.
-type ExitHandler func(deadline time.Time)
+type ExitHandler func()
 
 // AddExitHandler registers a function that should be called when the server is shutting down.
 func (s *Service) AddExitHandler(name string, fn ExitHandler) {
@@ -229,7 +225,7 @@ func (s *Service) RemoveExitHandler(name string) {
 }
 
 func (s *Service) initDefaultConfig() {
-	s.Config.Load(config.KeyLogLevel, "info", true, config.ParseLogLevel)
-	s.Config.Load(config.KeyServiceStartupTimeout, "5s", true, config.ParseDuration)
-	s.Config.Load(config.KeyHTTPPort, 8001, true, config.ParseInt)
+	s.Config.MustLoad(config.KeyLogLevel, "info", true, config.ParseLogLevel)
+	s.Config.MustLoad(config.KeyServiceStartupTimeout, "5s", true, config.ParseDuration)
+	s.Config.MustLoad(config.KeyHTTPPort, 8001, true, config.ParseInt)
 }

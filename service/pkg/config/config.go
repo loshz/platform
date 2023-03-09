@@ -46,8 +46,7 @@ func (c *Config) Set(key string, value interface{}) {
 
 // Load attempts to read config values from env vars, setting a default value if not found.
 // If supplied, all parse funcs will be ran against the value and panic on failure.
-// The method will return the raw, unparsed value.
-func (c *Config) Load(key string, value interface{}, required bool, fns ...ParseFunc) interface{} {
+func (c *Config) Load(key string, value interface{}, required bool, fns ...ParseFunc) error {
 	// read env var from os
 	if env := os.Getenv(normalizeKey(key)); env != "" {
 		value = env
@@ -56,7 +55,7 @@ func (c *Config) Load(key string, value interface{}, required bool, fns ...Parse
 	// check if value is required
 	if value == nil || value == "" {
 		if required {
-			panic(fmt.Sprintf("value for key '%s' is required", key))
+			return fmt.Errorf("config value '%s' is required", key)
 		}
 
 		return nil
@@ -65,13 +64,20 @@ func (c *Config) Load(key string, value interface{}, required bool, fns ...Parse
 	// run validate funtions
 	for _, fn := range fns {
 		if err := fn(value); err != nil {
-			panic(fmt.Sprintf("fatal error validating config value for '%s': %v", key, err))
+			return fmt.Errorf("error validating config value for '%s': %w", key, err)
 		}
 	}
 
 	c.Set(key, value)
 
-	return value
+	return nil
+}
+
+// MustLoad is functionally equivalent to Load, but panics on error.
+func (c *Config) MustLoad(key string, value interface{}, required bool, fns ...ParseFunc) {
+	if err := c.Load(key, value, required, fns...); err != nil {
+		panic(err)
+	}
 }
 
 // normalizeKey transforms a config key into a prefixed env var.
