@@ -1,0 +1,9 @@
+.git/
+.github/
+.dockerignore
+.gitignore
+.golangci.yml
+bin/
+vendor/
+Dockerfile
+README.md
