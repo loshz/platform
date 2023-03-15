@@ -54,7 +54,7 @@ jobs:
         go-version-file: 'service/go.mod'
     - uses: arduino/setup-protoc@v1
       with:
-        version: '3.x'
+        version: '3.21.12'
 
     - run: make proto/install
     - run: make proto/build
