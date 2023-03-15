@@ -5,7 +5,7 @@ DOCKER ?= sudo docker
 BIN_DIR ?= ${CURDIR}/bin
 GO_TEST_FLAGS ?= -failfast
 
-.PHONY: docker/build docker/push go/build go/lint go/test
+.PHONY: docker/build docker/push go/build go/lint go/test proto/install proto/build
 
 docker/build:
 	$(DOCKER) build \
@@ -26,3 +26,12 @@ go/lint:
 
 go/test:
 	@go test $(GO_TEST_FLAGS) ./...
+
+proto/install:
+	@go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.29
+	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
+
+proto/build:
+	@protoc --go_out=pkg/pb/v1 --go_opt=module=github.com/loshz/platform/pkg/pb/v1 \
+		--go-grpc_out=pkg/pb/v1 --go-grpc_opt=module=github.com/loshz/platform/pkg/pb/v1 \
+		./proto/v1/*.proto

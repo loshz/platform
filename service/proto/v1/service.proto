@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package service.v1;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/loshz/platform/pkg/pb/v1;pbv1";
+
+service PlatformService {
+  // Status...
+  rpc Status(google.protobuf.Empty) returns (StatusResponse) {}
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_OK = 1;
+  STATUS_ERROR = 2;
+}
+
+message StatusResponse {
+  string service = 1;
+  Status status = 2;
+}
