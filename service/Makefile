@@ -4,8 +4,9 @@ REGISTRY ?= ghcr.io/loshz/platform
 DOCKER ?= sudo docker
 BIN_DIR ?= ${CURDIR}/bin
 GO_TEST_FLAGS ?= -failfast
+PROTOC_VERSION ?= 3.21.12
 
-.PHONY: docker/build docker/push go/build go/lint go/test proto/install proto/build
+.PHONY: docker/build docker/push go/build go/lint go/test proto/check proto/install proto/build
 
 docker/build:
 	$(DOCKER) build \
@@ -26,6 +27,9 @@ go/lint:
 
 go/test:
 	@go test $(GO_TEST_FLAGS) ./...
+
+proto/check:
+	@protoc --version | grep $(PROTOC_VERSION) || (echo "Must use libprotoc $(PROTOC_VERSION)"; exit 1)
 
 proto/install:
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.29

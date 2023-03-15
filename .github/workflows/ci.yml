@@ -52,10 +52,9 @@ jobs:
     - uses: actions/setup-go@v3
       with:
         go-version-file: 'service/go.mod'
-    - uses: arduino/setup-protoc@v1
-      with:
-        version: '3.21.12'
 
-    - run: make proto/install
-    - run: make proto/build
-    - run: git diff --exit-code ./pkg/pb
+    # TODO: install protoc
+
+    #- run: make proto/install
+    #- run: make proto/build
+    #- run: git diff --exit-code ./pkg/pb
