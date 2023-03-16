@@ -4,6 +4,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -15,9 +16,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc"
 
 	"github.com/loshz/platform/pkg/config"
 	plog "github.com/loshz/platform/pkg/log"
+	pbv1 "github.com/loshz/platform/pkg/pb/v1"
 	"github.com/loshz/platform/pkg/version"
 )
 
@@ -36,6 +39,9 @@ type Service struct {
 
 	// Service configuration.
 	Config *config.Config
+
+	// gRPC server.
+	grpcServer *grpc.Server
 
 	// Local HTTP server.
 	httpServer *http.Server
@@ -79,7 +85,7 @@ func (s *Service) Run(run RunFunc) {
 	s.start(run)
 
 	// Start the local http server.
-	s.startLocalHTTP(s.Config.Int(config.KeyHTTPPort))
+	s.serveHTTP(s.Config.Int(config.KeyHTTPPort))
 
 	// Register service level Prometheus metrics.
 	s.registerDefaultMetrics()
@@ -130,6 +136,12 @@ func (s *Service) Exit(status int) {
 		}
 	}
 
+	// Stop the gRPC server gracefully.
+	// This will also close the underlying TCP listener.
+	if s.grpcServer != nil {
+		s.grpcServer.GracefulStop()
+	}
+
 	var wg sync.WaitGroup
 	for name, fn := range s.exitHandlers {
 		wg.Add(1)
@@ -144,10 +156,10 @@ func (s *Service) Exit(status int) {
 	os.Exit(status)
 }
 
-// startLocalHTTP configures and starts the local webserver.
+// serveHTTP configures and starts the local webserver.
 //
 // By default, it will register pprof, metrics and health endpoints.
-func (s *Service) startLocalHTTP(port int) {
+func (s *Service) serveHTTP(port int) {
 	router := http.NewServeMux()
 
 	// Configure debug endpoints.
@@ -178,6 +190,32 @@ func (s *Service) startLocalHTTP(port int) {
 			s.Exit(ExitError)
 		}
 	}()
+}
+
+// ServeGRPC configures, registers services and starts a gRPC server on a given port.
+func (s *Service) ServeGRPC(port int, desc *grpc.ServiceDesc, svc interface{}) {
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Error().Err(err).Msg("error creating tcp listener for grpc server")
+		s.Exit(ExitError)
+	}
+
+	// Register the default service server.
+	// Configure server and register services.
+	// TODO: pass server opts/timeouts/etc.
+	srv := grpc.NewServer()
+	srv.RegisterService(&pbv1.PlatformService_ServiceDesc, &grpcServer{})
+	srv.RegisterService(desc, svc)
+
+	go func() {
+		if err := srv.Serve(lis); err != grpc.ErrServerStopped {
+			log.Error().Err(err).Msg("grpc server error")
+			s.Exit(ExitError)
+		}
+	}()
+
+	log.Info().Msgf("grpc server running on :%d", port)
+	s.grpcServer = srv
 }
 
 // start attempts to run the service with an initial timeout.

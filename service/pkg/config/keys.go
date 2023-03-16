@@ -12,4 +12,7 @@ const (
 	KeyHTTPReadTimeout  = "http.read.timeout"
 	KeyHTTPWriteTimeout = "http.write.timeout"
 	KeyHTTPIdleTimeout  = "http.idle.timeout"
+
+	// gRPC server related fields/timeouts.
+	KeyGRPCPort = "grpc.port"
 )
