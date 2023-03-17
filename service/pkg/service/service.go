@@ -20,6 +20,7 @@ import (
 
 	"github.com/loshz/platform/pkg/config"
 	plog "github.com/loshz/platform/pkg/log"
+	"github.com/loshz/platform/pkg/metrics"
 	pbv1 "github.com/loshz/platform/pkg/pb/v1"
 	"github.com/loshz/platform/pkg/version"
 )
@@ -40,15 +41,9 @@ type Service struct {
 	// Service configuration.
 	Config *config.Config
 
-	// gRPC server.
-	grpcServer *grpc.Server
-
-	// Local HTTP server.
-	httpServer *http.Server
-
 	// Service specific exit handlers.
-	exitHandlers   map[string]ExitHandler
-	exitHandlersMu sync.RWMutex
+	exitHandlers    []ExitHandler
+	exitHandlersMtx sync.RWMutex
 }
 
 // New creates a named Service with configurable dependencies.
@@ -56,10 +51,9 @@ func New(name string) *Service {
 	// TODO: init deps here- config, DBs, etc.
 
 	return &Service{
-		Name:         name,
-		ID:           fmt.Sprintf("%s-%s", name, uuid.New()),
-		Config:       config.New(),
-		exitHandlers: make(map[string]ExitHandler),
+		Name:   name,
+		ID:     fmt.Sprintf("%s-%s", name, uuid.New()),
+		Config: config.New(),
 	}
 }
 
@@ -87,9 +81,6 @@ func (s *Service) Run(run RunFunc) {
 	// Start the local http server.
 	s.serveHTTP(s.Config.Int(config.KeyHTTPPort))
 
-	// Register service level Prometheus metrics.
-	s.registerDefaultMetrics()
-
 	// Wait for an exit signal.
 	s.waitSignal()
 
@@ -114,9 +105,6 @@ func (s *Service) waitSignal() {
 // Each exit handler will run in its own goroutine and will force exit after 30s
 // regardless of completion.
 func (s *Service) Exit(status int) {
-	s.exitHandlersMu.RLock()
-	defer s.exitHandlersMu.RUnlock()
-
 	exitWait := 30 * time.Second
 	deadline := time.Now().Add(exitWait)
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
@@ -128,28 +116,17 @@ func (s *Service) Exit(status int) {
 		os.Exit(status)
 	})
 
-	// Stop the local http server before calling exit handlers in case
-	// we need to process any remaining data.
-	if s.httpServer != nil {
-		if err := s.httpServer.Shutdown(ctx); err != nil {
-			log.Error().Err(err).Msg("error shutting down http server")
-		}
-	}
+	s.exitHandlersMtx.RLock()
+	defer s.exitHandlersMtx.RUnlock()
 
-	// Stop the gRPC server gracefully.
-	// This will also close the underlying TCP listener.
-	if s.grpcServer != nil {
-		s.grpcServer.GracefulStop()
-	}
-
+	// Run each exit handler in its own goroutine.
 	var wg sync.WaitGroup
-	for name, fn := range s.exitHandlers {
+	for _, fn := range s.exitHandlers {
 		wg.Add(1)
-		go func(name string, fn ExitHandler) {
+		go func(fn ExitHandler) {
 			defer wg.Done()
-			fn()
-			log.Info().Msgf("exit handler finished: %s", name)
-		}(name, fn)
+			fn(ctx)
+		}(fn)
 	}
 
 	wg.Wait()
@@ -176,23 +153,33 @@ func (s *Service) serveHTTP(port int) {
 	// TODO: define service dependencies
 	router.HandleFunc("/health", healthHandler(s.ID, nil))
 
-	s.httpServer = &http.Server{
+	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
 		Handler:      router,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
-	log.Info().Msgf("local http server running on :%d", port)
 
 	go func() {
-		if err := s.httpServer.ListenAndServe(); err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 			log.Error().Err(err).Msg("local http server error")
 			s.Exit(ExitError)
 		}
 	}()
+
+	s.AddExitHandler(func(ctx context.Context) {
+		log.Info().Msg("stopping http server")
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Error().Err(err).Msg("error shutting down http server")
+		}
+	})
+
+	log.Info().Msgf("local http server running on :%d", port)
 }
 
 // ServeGRPC configures, registers services and starts a gRPC server on a given port.
+// It is intentially not called automatically in Start() as not every service requires a gRPC server,
+// therefore it should be called directly by the service itself.
 func (s *Service) ServeGRPC(port int, desc *grpc.ServiceDesc, svc interface{}) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
@@ -200,10 +187,13 @@ func (s *Service) ServeGRPC(port int, desc *grpc.ServiceDesc, svc interface{}) {
 		s.Exit(ExitError)
 	}
 
-	// Register the default service server.
 	// Configure server and register services.
 	// TODO: pass server opts/timeouts/etc.
-	srv := grpc.NewServer()
+	opts := []grpc.ServerOption{
+		grpc.StreamInterceptor(streamInterceptor(s.ID)),
+		grpc.UnaryInterceptor(unaryInterceptor(s.ID)),
+	}
+	srv := grpc.NewServer(opts...)
 	srv.RegisterService(&pbv1.PlatformService_ServiceDesc, &grpcServer{})
 	srv.RegisterService(desc, svc)
 
@@ -214,8 +204,12 @@ func (s *Service) ServeGRPC(port int, desc *grpc.ServiceDesc, svc interface{}) {
 		}
 	}()
 
+	s.AddExitHandler(func(ctx context.Context) {
+		log.Info().Msg("stopping grpc server")
+		srv.GracefulStop()
+	})
+
 	log.Info().Msgf("grpc server running on :%d", port)
-	s.grpcServer = srv
 }
 
 // start attempts to run the service with an initial timeout.
@@ -242,24 +236,18 @@ func (s *Service) start(run RunFunc) {
 		s.Exit(ExitError)
 	}
 
+	metrics.ServiceInfo.WithLabelValues(s.Name, s.ID, version.Build).Inc()
 	log.Info().Msg("service started")
 }
 
 // ExitHandler is a timed function ran only on service shutdown.
-type ExitHandler func()
+type ExitHandler func(context.Context)
 
 // AddExitHandler registers a function that should be called when the server is shutting down.
-func (s *Service) AddExitHandler(name string, fn ExitHandler) {
-	s.exitHandlersMu.Lock()
-	s.exitHandlers[name] = fn
-	s.exitHandlersMu.Unlock()
-}
-
-// RemoveExitHandler removes an exit function that has previously been registered.
-func (s *Service) RemoveExitHandler(name string) {
-	s.exitHandlersMu.Lock()
-	delete(s.exitHandlers, name)
-	s.exitHandlersMu.Unlock()
+func (s *Service) AddExitHandler(fn ExitHandler) {
+	s.exitHandlersMtx.Lock()
+	s.exitHandlers = append(s.exitHandlers, fn)
+	s.exitHandlersMtx.Unlock()
 }
 
 func (s *Service) initDefaultConfig() {

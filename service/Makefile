@@ -1,9 +1,8 @@
-# Configurable env vars
 BUILD_NUMBER ?= dev
 REGISTRY ?= ghcr.io/loshz/platform
 DOCKER ?= sudo docker
 BIN_DIR ?= ${CURDIR}/bin
-GO_TEST_FLAGS ?= -failfast
+GO_TEST_FLAGS ?= -failfast -race
 PROTOC_VERSION ?= 3.21.12
 
 .PHONY: docker/build docker/push go/build go/lint go/test proto/check proto/install proto/build
@@ -35,7 +34,7 @@ proto/install:
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.29
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 
-proto/build:
+proto/build: proto/check
 	@protoc --go_out=pkg/pb/v1 --go_opt=module=github.com/loshz/platform/pkg/pb/v1 \
 		--go-grpc_out=pkg/pb/v1 --go-grpc_opt=module=github.com/loshz/platform/pkg/pb/v1 \
 		./proto/v1/*.proto
