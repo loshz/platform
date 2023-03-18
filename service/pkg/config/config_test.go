@@ -1,30 +1,57 @@
 package config
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConfig(t *testing.T) {
-	t.Parallel()
+func TestLoad(t *testing.T) {
+	t.Setenv("TEST_SOME_KEY", "value")
 
-	t.Run("TestSetGet", func(t *testing.T) {
-		t.Parallel()
+	c := New("test")
 
-		c := New()
-		c.Set("key", "value")
-
-		val := c.Get("key")
-		assert.Equal(t, "value", val)
+	// Test load success.
+	err := c.Load("some.key", "", true, func(interface{}) error {
+		return nil
 	})
+	assert.NoError(t, err)
+
+	// Test default value success.
+	err = c.Load("does.not.exist", "default_value", true, func(interface{}) error {
+		return nil
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, c.Get("does.not.exist"), "default_value")
+
+	// Test validation error.
+	err = c.Load("some.key", "", true, func(interface{}) error {
+		return errors.New("validation error")
+	})
+	assert.EqualError(t, errors.Unwrap(err), "validation error")
+
+	// Test required error.
+	err = c.Load("does.not.exist", "", true, func(interface{}) error {
+		return nil
+	})
+	assert.EqualError(t, err, "config value 'TEST_DOES_NOT_EXIST' is required")
+}
+
+func TestSetGet(t *testing.T) {
+	c := New("test")
+	c.Set("key", "value")
+
+	val := c.Get("key")
+	assert.Equal(t, "value", val)
 }
 
 func TestNormalizeKey(t *testing.T) {
-	t.Parallel()
+	c := New("test")
 
-	expected := "PCONF_LOG_LEVEL"
-	if key := normalizeKey(KeyLogLevel); key != expected {
-		t.Errorf("expected key: '%s', got: '%s'", expected, key)
-	}
+	key := c.normalizeKey("some.key")
+	assert.Equal(t, key, "TEST_SOME_KEY")
+
+	key = c.normalizeKey(" some. key ")
+	assert.Equal(t, key, "TEST_SOME_KEY")
 }

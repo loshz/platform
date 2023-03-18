@@ -53,7 +53,7 @@ func New(name string) *Service {
 	return &Service{
 		Name:   name,
 		ID:     fmt.Sprintf("%s-%s", name, uuid.New()),
-		Config: config.New(),
+		Config: config.New(name),
 	}
 }
 

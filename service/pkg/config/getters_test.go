@@ -12,7 +12,7 @@ var testGetterConfig *Config
 
 func TestMain(m *testing.M) {
 	// Create test config
-	testGetterConfig = New()
+	testGetterConfig = New("test")
 
 	// Set string values
 	testGetterConfig.Set("string", "some_value")

@@ -14,5 +14,7 @@ const (
 	KeyHTTPIdleTimeout  = "http.idle.timeout"
 
 	// gRPC server related fields/timeouts.
-	KeyGRPCPort = "grpc.port"
+	KeyGRPCServerPort = "grpc.server.port"
+	KeyGRPCServerCert = "grpc.server.cert"
+	KeyGRPCServerKey  = "grpc.server.key"
 )

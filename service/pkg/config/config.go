@@ -9,19 +9,18 @@ import (
 	"sync"
 )
 
-// The env var prefix for platform config.
-const envVarPrefix = "PCONF_"
-
 // Config stores config key/values and provides methods
 // for concurrent read/write access.
 type Config struct {
+	prefix string
 	values map[string]interface{}
 	mtx    sync.RWMutex
 }
 
 // New creates a new config with an initialized in memory store.
-func New() *Config {
+func New(prefix string) *Config {
 	c := &Config{
+		prefix: prefix,
 		values: make(map[string]interface{}),
 	}
 
@@ -47,15 +46,17 @@ func (c *Config) Set(key string, value interface{}) {
 // Load attempts to read config values from env vars, setting a default value if not found.
 // If supplied, all parse funcs will be ran against the value and panic on failure.
 func (c *Config) Load(key string, value interface{}, required bool, fns ...ParseFunc) error {
+	normKey := c.normalizeKey(key)
+
 	// read env var from os
-	if env := os.Getenv(normalizeKey(key)); env != "" {
+	if env := os.Getenv(normKey); env != "" {
 		value = env
 	}
 
 	// check if value is required
 	if value == nil || value == "" {
 		if required {
-			return fmt.Errorf("config value '%s' is required", key)
+			return fmt.Errorf("config value '%s' is required", normKey)
 		}
 
 		return nil
@@ -64,7 +65,7 @@ func (c *Config) Load(key string, value interface{}, required bool, fns ...Parse
 	// run validate funtions
 	for _, fn := range fns {
 		if err := fn(value); err != nil {
-			return fmt.Errorf("error validating config value for '%s': %w", key, err)
+			return fmt.Errorf("error validating config value for '%s': %w", normKey, err)
 		}
 	}
 
@@ -81,12 +82,14 @@ func (c *Config) MustLoad(key string, value interface{}, required bool, fns ...P
 }
 
 // normalizeKey transforms a config key into a prefixed env var.
-// For example: log.level becomes PCONF_LOG_LEVEL
-func normalizeKey(key string) string {
-	// transform key to env var
+// For example: log.level becomes PREFIX_LOG_LEVEL
+func (c *Config) normalizeKey(key string) string {
+	// Remove whiitespace.
+	key = strings.ReplaceAll(key, " ", "")
+	// Transform key to env var.
 	key = strings.Replace(key, ".", "_", -1)
-	// add prefix to key
-	key = strings.ToUpper(envVarPrefix + key)
+	// Add prefix to key.
+	key = strings.ToUpper(fmt.Sprintf("%s_%s", c.prefix, key))
 
 	return key
 }
