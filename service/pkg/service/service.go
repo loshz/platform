@@ -32,9 +32,6 @@ const (
 
 // Service represents a platform application.
 type Service struct {
-	// Explicit service name.
-	Name string
-
 	// UUID of an individual service including Name prefix.
 	ID string
 
@@ -51,7 +48,6 @@ func New(name string) *Service {
 	// TODO: init deps here- config, DBs, etc.
 
 	return &Service{
-		Name:   name,
 		ID:     fmt.Sprintf("%s-%s", name, uuid.New()),
 		Config: config.New(name),
 	}
@@ -236,7 +232,7 @@ func (s *Service) start(run RunFunc) {
 		s.Exit(ExitError)
 	}
 
-	metrics.ServiceInfo.WithLabelValues(s.Name, s.ID, version.Build).Inc()
+	metrics.ServiceInfo.WithLabelValues(s.ID, version.Build).Inc()
 	log.Info().Msg("service started")
 }
 

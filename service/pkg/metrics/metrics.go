@@ -16,5 +16,5 @@ var ServiceInfo = promauto.NewCounterVec(
 		Name:      "service_info",
 		Help:      "Service specific information.",
 	},
-	[]string{"service_name", "service_id", "version"},
+	[]string{"service_id", "version"},
 )
