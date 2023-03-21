@@ -20,7 +20,7 @@ resource "aws_subnet" "public" {
   availability_zone       = data.aws_availability_zones.available.names[count.index]
   map_public_ip_on_launch = true
 
-  tags = { "Name" = "public${count.index + 1}-${data.aws_availability_zones.available.names[count.index]}" }
+  tags = { "Name" = "public-${data.aws_availability_zones.available.names[count.index]}" }
 }
 
 # Create 2 private subnets.
@@ -32,7 +32,7 @@ resource "aws_subnet" "private" {
   availability_zone       = data.aws_availability_zones.available.names[count.index]
   map_public_ip_on_launch = false
 
-  tags = { "Name" = "private${count.index + 1}-${data.aws_availability_zones.available.names[count.index]}" }
+  tags = { "Name" = "private-${data.aws_availability_zones.available.names[count.index]}" }
 }
 
 # Create an IGW to enable internet-routable traffic.
@@ -49,7 +49,7 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.public.id
   }
 
-  tags = { "Name" = "public" }
+  tags = { "Name" = "public-${var.region}" }
 }
 
 # Create 2 privte route tables to direct network traffic.
@@ -58,7 +58,7 @@ resource "aws_route_table" "private" {
 
   vpc_id = aws_vpc.platform.id
 
-  tags = { "Name" = "private${count.index + 1}-${data.aws_availability_zones.available.names[count.index]}" }
+  tags = { "Name" = "private-${data.aws_availability_zones.available.names[count.index]}" }
 }
 
 # Associate the route table with the public subnets.
