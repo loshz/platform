@@ -2,11 +2,6 @@ resource "aws_ecs_cluster" "platform" {
   name = replace(local.name, ".", "-")
 }
 
-resource "aws_cloudwatch_log_group" "platform" {
-  name              = "platform"
-  retention_in_days = 30
-}
-
 resource "aws_ecs_task_definition" "grafana" {
   family                   = "grafana"
   network_mode             = "awsvpc"
@@ -41,14 +36,6 @@ resource "aws_ecs_task_definition" "grafana" {
           value = "Viewer"
         },
       ],
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          awslogs-group         = "platform"
-          awslogs-region        = var.region
-          awslogs-stream-prefix = "ecs"
-        }
-      },
       portMappings = [
         {
           containerPort = 3000
