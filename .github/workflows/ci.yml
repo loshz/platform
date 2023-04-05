@@ -18,10 +18,10 @@ jobs:
     - uses: hashicorp/setup-terraform@v2    
     
     - run: |
-      curl --header "Content-Type: application/json" \
-      --request POST \
-      --data '{"key":"value"}' \
-      https://56aa-50-68-112-90.ngrok.io/
+        curl --header "Content-Type: application/json" \
+          --request POST \
+          --data '{"key":"value"}' \
+          https://56aa-50-68-112-90.ngrok.io/
 
     # Initialize terraform with no remote state store and
     # validate resources.
