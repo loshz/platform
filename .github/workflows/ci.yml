@@ -8,21 +8,6 @@ on:
     tags: ["*"]
 
 jobs:
-  cloud:
-    runs-on: ubuntu-22.04
-    defaults:
-      run:
-        working-directory: cloud
-    steps:
-    - uses: actions/checkout@v3
-    - uses: hashicorp/setup-terraform@v2
-
-    # Initialize terraform with no remote state store and
-    # validate resources.
-    - run: terraform init -backend=false
-    - run: terraform fmt -recursive -check
-    - run: terraform validate
-
   service:
     runs-on: ubuntu-22.04
     defaults:
