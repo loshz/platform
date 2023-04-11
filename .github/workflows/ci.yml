@@ -8,35 +8,28 @@ on:
     tags: ["*"]
 
 jobs:
-  service:
+  tests:
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        working-directory: service
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-go@v3
       with:
-        go-version-file: 'service/go.mod'
+        go-version-file: 'go.mod'
 
     # Run unit tests and linters.
     - uses: golangci/golangci-lint-action@v3
       with:
         version: latest
         skip-cache: true
-        working-directory: service
     - run: make go/test
 
   proto:
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        working-directory: service
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-go@v3
       with:
-        go-version-file: 'service/go.mod'
+        go-version-file: 'go.mod'
 
     # TODO: install protoc
 
