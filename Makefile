@@ -1,19 +1,20 @@
 BUILD_NUMBER ?= dev
-REGISTRY ?= ghcr.io/loshz/platform
 DOCKER ?= sudo docker
+DOCKER_IMAGE ?= loshz/platform
 BIN_DIR ?= ${CURDIR}/bin
 GO_TEST_FLAGS ?= -failfast -race
 PROTOC_VERSION ?= 3.21.12
 
-.PHONY: docker/build docker/push go/build go/lint go/test proto/check proto/install proto/build
+.PHONY: docker/build docker/compose go/build go/lint go/test proto/check proto/install proto/build
 
 docker/build:
 	$(DOCKER) build \
 	  --build-arg BUILD_NUMBER=$(BUILD_NUMBER) \
-	  --tag $(REGISTRY):$(BUILD_NUMBER) .
+	  --tag $(DOCKER_IMAGE):$(BUILD_NUMBER) .
 
-docker/push:
-	$(DOCKER) push $(REGISTRY):$(BUILD_NUMBER)
+docker/compose:
+	$(DOCKER) compose build --build-arg BUILD_NUMBER=$(BUILD_NUMBER)
+	$(DOCKER) compose up
 
 go/build: ./cmd/*
 	@for CMD in $^; do \

@@ -2,11 +2,5 @@ version: 2
 
 updates:
   - package-ecosystem: "gomod"
-    directory: "service"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "terraform"
-    directory: "cloud"
     schedule:
       interval: "weekly"
