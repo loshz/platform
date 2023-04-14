@@ -4,24 +4,20 @@ package service
 import (
 	"context"
 	"fmt"
-	"net"
-	"net/http"
-	"net/http/pprof"
 	"os"
 	"os/signal"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
-	"google.golang.org/grpc"
 
 	"github.com/loshz/platform/pkg/config"
+	"github.com/loshz/platform/pkg/leader"
 	plog "github.com/loshz/platform/pkg/log"
 	"github.com/loshz/platform/pkg/metrics"
-	pbv1 "github.com/loshz/platform/pkg/pb/v1"
 	"github.com/loshz/platform/pkg/version"
 )
 
@@ -32,11 +28,19 @@ const (
 
 // Service represents a platform application.
 type Service struct {
-	// UUID of an individual service including Name prefix.
-	ID string
+	// UUID of the individual service including Name prefix.
+	ID   string
+	name string
 
 	// Service configuration.
 	Config *config.Config
+
+	// Global context used to signal service shutdown to spawned
+	// goroutines.
+	ctx    context.Context
+	cancel context.CancelFunc
+
+	leader atomic.Int32
 
 	// Service specific exit handlers.
 	exitHandlers    []ExitHandler
@@ -47,9 +51,14 @@ type Service struct {
 func New(name string) *Service {
 	// TODO: init deps here- config, DBs, etc.
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return &Service{
 		ID:     fmt.Sprintf("%s-%s", name, uuid.New()),
 		Config: config.New(name),
+		name:   name,
+		ctx:    ctx,
+		cancel: cancel,
 	}
 }
 
@@ -75,7 +84,10 @@ func (s *Service) Run(run RunFunc) {
 	s.start(run)
 
 	// Start the local http server.
-	s.serveHTTP(s.Config.Int(config.KeyHTTPPort))
+	go s.serveHTTP(s.Config.Int(config.KeyHTTPPort))
+
+	// Attempt to acquire leader election.
+	go s.registerLeader()
 
 	// Wait for an exit signal.
 	s.waitSignal()
@@ -88,11 +100,11 @@ func (s *Service) Run(run RunFunc) {
 //
 // By default, it will handle calls to SIGINT and SIGTERM.
 func (s *Service) waitSignal() {
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
 	// Wait for signal to be received.
-	<-ch
+	<-stop
 	log.Info().Msg("stop signal received, starting shut down")
 }
 
@@ -101,14 +113,17 @@ func (s *Service) waitSignal() {
 // Each exit handler will run in its own goroutine and will force exit after 30s
 // regardless of completion.
 func (s *Service) Exit(status int) {
+	// Cancel the service context.
+	s.cancel()
+
 	exitWait := 30 * time.Second
 	deadline := time.Now().Add(exitWait)
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
-	defer cancel()
 
 	// Force exit after deadline.
 	time.AfterFunc(exitWait, func() {
 		log.Error().Msgf("service shutdown took longer than %s, aborting", exitWait)
+		cancel()
 		os.Exit(status)
 	})
 
@@ -126,86 +141,30 @@ func (s *Service) Exit(status int) {
 	}
 
 	wg.Wait()
+	cancel()
 	os.Exit(status)
 }
 
-// serveHTTP configures and starts the local webserver.
-//
-// By default, it will register pprof, metrics and health endpoints.
-func (s *Service) serveHTTP(port int) {
-	router := http.NewServeMux()
-
-	// Configure debug endpoints.
-	router.HandleFunc("/debug/pprof/", pprof.Index)
-	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	router.HandleFunc("/debug/pprof/trace", pprof.Trace)
-
-	// Expose the registered metrics via HTTP.
-	router.Handle("/metrics", promhttp.Handler())
-
-	// Expose health check
-	// TODO: define service dependencies
-	router.HandleFunc("/health", healthHandler(s.ID, nil))
-
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", port),
-		Handler:      router,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-	}
-
-	go func() {
-		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.Error().Err(err).Msg("local http server error")
-			s.Exit(ExitError)
-		}
-	}()
-
-	s.AddExitHandler(func(ctx context.Context) {
-		log.Info().Msg("stopping http server")
-		if err := srv.Shutdown(ctx); err != nil {
-			log.Error().Err(err).Msg("error shutting down http server")
-		}
-	})
-
-	log.Info().Msgf("local http server running on :%d", port)
-}
-
-// ServeGRPC configures, registers services and starts a gRPC server on a given port.
-// It is intentially not called automatically in Start() as not every service requires a gRPC server,
-// therefore it should be called directly by the service itself.
-func (s *Service) ServeGRPC(port int, desc *grpc.ServiceDesc, svc interface{}) {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+// registerLeader attempts to acquire election status. If successful,
+// it will register itself as the leader and release leadership status
+// upon service exit.
+func (s *Service) registerLeader() {
+	fd, err := leader.Acquire(s.name)
 	if err != nil {
-		log.Error().Err(err).Msg("error creating tcp listener for grpc server")
+		log.Error().Err(err).Msg("error atempting leader election")
 		s.Exit(ExitError)
 	}
+	defer leader.Release(fd)
 
-	// Configure server and register services.
-	// TODO: pass server opts/timeouts/etc.
-	opts := []grpc.ServerOption{
-		grpc.StreamInterceptor(streamInterceptor(s.ID)),
-		grpc.UnaryInterceptor(unaryInterceptor(s.ID)),
-	}
-	srv := grpc.NewServer(opts...)
-	srv.RegisterService(&pbv1.PlatformService_ServiceDesc, &grpcServer{})
-	srv.RegisterService(desc, svc)
+	log.Info().Msg("leadership status acquired")
+	s.leader.Store(1)
 
-	go func() {
-		if err := srv.Serve(lis); err != grpc.ErrServerStopped {
-			log.Error().Err(err).Msg("grpc server error")
-			s.Exit(ExitError)
-		}
-	}()
+	<-s.ctx.Done()
+}
 
-	s.AddExitHandler(func(ctx context.Context) {
-		log.Info().Msg("stopping grpc server")
-		srv.GracefulStop()
-	})
-
-	log.Info().Msgf("grpc server running on :%d", port)
+// IsLeader returns the status of the current service's leadership.
+func (s *Service) IsLeader() bool {
+	return s.leader.Load() == 1
 }
 
 // start attempts to run the service with an initial timeout.
