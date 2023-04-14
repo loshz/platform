@@ -49,5 +49,5 @@ func (s *Service) serveHTTP(port int) {
 	// Wait for service to exit and shutdown.
 	<-s.ctx.Done()
 	log.Info().Msg("stopping http server")
-	srv.Shutdown(context.Background())
+	_ = srv.Shutdown(context.Background())
 }
