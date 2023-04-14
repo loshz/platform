@@ -31,8 +31,13 @@ jobs:
       with:
         go-version-file: 'go.mod'
 
-    # TODO: install protoc
+    - name: Install protoc
+      run: |
+        curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v21.12/protoc-21.12-linux-x86_64.zip
+        unzip -o protoc-21.12-linux-x86_64.zip -d /usr/local bin/protoc
+        unzip -o protoc-21.12-linux-x86_64.zip -d /usr/local 'include/*'
 
+    - run: make proto/check
     #- run: make proto/install
     #- run: make proto/build
     #- run: git diff --exit-code ./pkg/pb

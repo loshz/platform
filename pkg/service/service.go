@@ -28,7 +28,7 @@ const (
 
 // Service represents a platform application.
 type Service struct {
-	// UUID of the individual service including Name prefix.
+	// UUID of the individual service including name prefix.
 	ID   string
 	name string
 
@@ -40,6 +40,7 @@ type Service struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
+	// Store the current leadership status.
 	leader atomic.Int32
 
 	// Service specific exit handlers.
@@ -51,6 +52,7 @@ type Service struct {
 func New(name string) *Service {
 	// TODO: init deps here- config, DBs, etc.
 
+	// Configure context for service shutdown signals.
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Service{
