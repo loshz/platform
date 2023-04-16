@@ -4,16 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/loshz/platform/pkg/config"
-	"github.com/loshz/platform/pkg/metrics"
+	pgrpc "github.com/loshz/platform/pkg/grpc"
 	pbv1 "github.com/loshz/platform/pkg/pb/v1"
 )
 
@@ -30,45 +27,6 @@ func (s *grpcServer) Status(context.Context, *emptypb.Empty) (*pbv1.StatusRespon
 	}, nil
 }
 
-// streamInterceptor instruments and logs information about gRPC stream calls.
-func streamInterceptor(service string) grpc.StreamServerInterceptor {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		// Time the underlying request.
-		start := time.Now()
-		err := handler(srv, ss)
-		latency := time.Since(start)
-
-		// Get the request status code.
-		code := status.Code(err)
-
-		// Record request metrics.
-		labels := []string{service, code.String(), info.FullMethod, "stream"}
-		metrics.GRPCRequestDuration.WithLabelValues(labels...).Observe(latency.Seconds())
-		metrics.GRPCRequestsTotal.WithLabelValues(labels...).Inc()
-
-		return err
-	}
-}
-
-// unaryInterceptor instruments and logs information about gRPC unary calls.
-func unaryInterceptor(service string) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		start := time.Now()
-		res, err := handler(ctx, req)
-		latency := time.Since(start)
-
-		// Get the request status code.
-		code := status.Code(err)
-
-		// Record request metrics.
-		labels := []string{"TODO", code.String(), info.FullMethod, "unary"}
-		metrics.GRPCRequestDuration.WithLabelValues(labels...).Observe(latency.Seconds())
-		metrics.GRPCRequestsTotal.WithLabelValues(labels...).Inc()
-
-		return res, err
-	}
-}
-
 // ServeGRPC configures, registers services and starts a gRPC server on a given port.
 // It is intentially not called in Start() as not every service requires a gRPC server,
 // therefore it should be called directly by the service itself.
@@ -81,17 +39,17 @@ func (s *Service) ServeGRPC(desc *grpc.ServiceDesc, svc interface{}) {
 		s.Exit(ExitError)
 	}
 
-	// Load server TLS credentials.
-	creds, err := credentials.NewServerTLSFromFile(s.Config.String(config.KeyGRPCServerCert), s.Config.String(config.KeyGRPCServerKey))
+	// Load TLS credentials.
+	creds, err := pgrpc.LoadGRPCCreds(s.Config.String(config.KeyGRPCServerCert), s.Config.String(config.KeyGRPCServerKey), s.Config.String(config.KeyGRPCClientCA))
 	if err != nil {
-		log.Error().Err(err).Msg("error loading grpc server tls credentials")
+		log.Error().Err(err).Msg("error loading grpc tls credentials")
 		s.Exit(ExitError)
 	}
 
 	opts := []grpc.ServerOption{
 		grpc.Creds(creds),
-		grpc.UnaryInterceptor(unaryInterceptor(s.ID)),
-		grpc.StreamInterceptor(streamInterceptor(s.ID)),
+		grpc.UnaryInterceptor(pgrpc.UnaryInterceptor(s.ID)),
+		grpc.StreamInterceptor(pgrpc.StreamInterceptor(s.ID)),
 		grpc.ConnectionTimeout(s.Config.Duration(config.KeyGRPCServerConnTimeout)),
 	}
 

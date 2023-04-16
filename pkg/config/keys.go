@@ -1,21 +1,22 @@
 package config
 
 const (
-	// The level at which the service should write application logs.
-	KeyLogLevel = "log.level"
-
-	// Service related config.
+	// Service config.
+	KeyLogLevel              = "log.level"
 	KeyServiceStartupTimeout = "service.startup.timeout"
 
-	// HTTPS/S server related fields/timeouts.
+	// HTTPS/S server config.
 	KeyHTTPPort         = "http.port"
 	KeyHTTPReadTimeout  = "http.read.timeout"
 	KeyHTTPWriteTimeout = "http.write.timeout"
 	KeyHTTPIdleTimeout  = "http.idle.timeout"
 
-	// gRPC server related fields/timeouts.
+	// gRPC server config.
 	KeyGRPCServerPort        = "grpc.server.port"
 	KeyGRPCServerCert        = "grpc.server.cert"
 	KeyGRPCServerKey         = "grpc.server.key"
 	KeyGRPCServerConnTimeout = "grpc.server.conn.timeout"
+
+	// gRPC client config.
+	KeyGRPCClientCA = "grpc.client.ca"
 )
