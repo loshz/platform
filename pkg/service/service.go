@@ -57,7 +57,7 @@ func New(name string) *Service {
 
 	return &Service{
 		ID:     fmt.Sprintf("%s-%s", name, uuid.New()),
-		Config: config.New(name),
+		Config: config.New(),
 		name:   name,
 		ctx:    ctx,
 		cancel: cancel,
@@ -77,7 +77,7 @@ type RunFunc func(*Service) error
 // signal to be received before attempting to gracefully shutdown.
 func (s *Service) Run(run RunFunc) {
 	// Initialize required service config.
-	s.initDefaultConfig()
+	s.loadRequiredConfig()
 
 	// Configure global logger.
 	plog.ConfigureGlobalLogging(s.Config.String(config.KeyLogLevel), s.ID, version.Build)
@@ -86,7 +86,7 @@ func (s *Service) Run(run RunFunc) {
 	s.start(run)
 
 	// Start the local http server.
-	go s.serveHTTP(s.Config.Int(config.KeyHTTPPort))
+	go s.serveHTTP()
 
 	// Attempt to acquire leader election.
 	go s.registerLeader()
@@ -207,8 +207,8 @@ func (s *Service) AddExitHandler(fn ExitHandler) {
 	s.exitHandlersMtx.Unlock()
 }
 
-func (s *Service) initDefaultConfig() {
-	s.Config.MustLoad(config.KeyLogLevel, "info", true, config.ParseLogLevel)
-	s.Config.MustLoad(config.KeyServiceStartupTimeout, "5s", true, config.ParseDuration)
-	s.Config.MustLoad(config.KeyHTTPPort, 8001, true, config.ParseInt)
+func (s *Service) loadRequiredConfig() {
+	s.Config.MustLoad(config.KeyLogLevel, "info", config.ParseLogLevel)
+	s.Config.MustLoad(config.KeyServiceStartupTimeout, "5s", config.ParseDuration)
+	s.Config.MustLoad(config.KeyHTTPPort, 8001, config.ParseInt)
 }

@@ -8,9 +8,11 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/loshz/platform/pkg/config"
 	"github.com/loshz/platform/pkg/metrics"
 	pbv1 "github.com/loshz/platform/pkg/pb/v1"
 )
@@ -70,25 +72,36 @@ func unaryInterceptor(service string) grpc.UnaryServerInterceptor {
 // ServeGRPC configures, registers services and starts a gRPC server on a given port.
 // It is intentially not called in Start() as not every service requires a gRPC server,
 // therefore it should be called directly by the service itself.
-func (s *Service) ServeGRPC(port int, desc *grpc.ServiceDesc, svc interface{}) {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+func (s *Service) ServeGRPC(desc *grpc.ServiceDesc, svc interface{}) {
+	port := fmt.Sprintf(":%d", s.Config.Int(config.KeyGRPCServerPort))
+
+	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Error().Err(err).Msg("error creating tcp listener for grpc server")
 		s.Exit(ExitError)
 	}
 
-	// Configure server and register services.
-	// TODO: pass server opts/timeouts/etc.
-	opts := []grpc.ServerOption{
-		grpc.StreamInterceptor(streamInterceptor(s.ID)),
-		grpc.UnaryInterceptor(unaryInterceptor(s.ID)),
+	// Load server TLS credentials.
+	creds, err := credentials.NewServerTLSFromFile(s.Config.String(config.KeyGRPCServerCert), s.Config.String(config.KeyGRPCServerKey))
+	if err != nil {
+		log.Error().Err(err).Msg("error loading grpc server tls credentials")
+		s.Exit(ExitError)
 	}
+
+	opts := []grpc.ServerOption{
+		grpc.Creds(creds),
+		grpc.UnaryInterceptor(unaryInterceptor(s.ID)),
+		grpc.StreamInterceptor(streamInterceptor(s.ID)),
+		grpc.ConnectionTimeout(s.Config.Duration(config.KeyGRPCServerConnTimeout)),
+	}
+
+	// Configure server and register services.
 	srv := grpc.NewServer(opts...)
 	srv.RegisterService(&pbv1.PlatformService_ServiceDesc, &grpcServer{})
 	srv.RegisterService(desc, svc)
 
 	go func() {
-		log.Info().Msgf("grpc server running on :%d", port)
+		log.Info().Msgf("grpc server running on %s", port)
 		if err := srv.Serve(lis); err != grpc.ErrServerStopped {
 			log.Error().Err(err).Msg("grpc server error")
 			s.Exit(ExitError)

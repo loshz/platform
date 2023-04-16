@@ -12,15 +12,13 @@ import (
 // Config stores config key/values and provides methods
 // for concurrent read/write access.
 type Config struct {
-	prefix string
 	values map[string]interface{}
 	mtx    sync.RWMutex
 }
 
 // New creates a new config with an initialized in memory store.
-func New(prefix string) *Config {
+func New() *Config {
 	c := &Config{
-		prefix: prefix,
 		values: make(map[string]interface{}),
 	}
 
@@ -45,24 +43,20 @@ func (c *Config) Set(key string, value interface{}) {
 
 // Load attempts to read config values from env vars, setting a default value if not found.
 // If supplied, all parse funcs will be ran against the value and panic on failure.
-func (c *Config) Load(key string, value interface{}, required bool, fns ...ParseFunc) error {
-	normKey := c.normalizeKey(key)
+func (c *Config) Load(key string, value interface{}, fns ...ParseFunc) error {
+	normKey := normalizeKey(key)
 
-	// read env var from os
+	// Check for default value.
+	if value == nil || value == "" {
+		return fmt.Errorf("default value for '%s' is required", normKey)
+	}
+
+	// Read valud from env vars.
 	if env := os.Getenv(normKey); env != "" {
 		value = env
 	}
 
-	// check if value is required
-	if value == nil || value == "" {
-		if required {
-			return fmt.Errorf("config value '%s' is required", normKey)
-		}
-
-		return nil
-	}
-
-	// run validate funtions
+	// Run validate funtions.
 	for _, fn := range fns {
 		if err := fn(value); err != nil {
 			return fmt.Errorf("error validating config value for '%s': %w", normKey, err)
@@ -75,21 +69,21 @@ func (c *Config) Load(key string, value interface{}, required bool, fns ...Parse
 }
 
 // MustLoad is functionally equivalent to Load, but panics on error.
-func (c *Config) MustLoad(key string, value interface{}, required bool, fns ...ParseFunc) {
-	if err := c.Load(key, value, required, fns...); err != nil {
+func (c *Config) MustLoad(key string, value interface{}, fns ...ParseFunc) {
+	if err := c.Load(key, value, fns...); err != nil {
 		panic(err)
 	}
 }
 
 // normalizeKey transforms a config key into a prefixed env var.
-// For example: log.level becomes PREFIX_LOG_LEVEL
-func (c *Config) normalizeKey(key string) string {
+// For example: log.level becomes PLATFORM_LOG_LEVEL
+func normalizeKey(key string) string {
 	// Remove whiitespace.
 	key = strings.ReplaceAll(key, " ", "")
 	// Transform key to env var.
 	key = strings.Replace(key, ".", "_", -1)
 	// Add prefix to key.
-	key = strings.ToUpper(fmt.Sprintf("%s_%s", c.prefix, key))
+	key = strings.ToUpper(fmt.Sprintf("PLATFORM_%s", key))
 
 	return key
 }
