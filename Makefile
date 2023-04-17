@@ -43,6 +43,7 @@ proto/install:
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3
 
 proto/build: proto/check
+	@echo "Generating proto..."
 	@protoc --go_out=pkg/pb/v1 --go_opt=module=github.com/loshz/platform/pkg/pb/v1 \
 		--go-grpc_out=pkg/pb/v1 --go-grpc_opt=module=github.com/loshz/platform/pkg/pb/v1 \
 		./proto/v1/*.proto
