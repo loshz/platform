@@ -1,10 +1,9 @@
-# cloud
-.terraform
-*.tfstate
-*.tfstate.backup
-*.tfstate.lock.info
-*.tfvars
-
-# service
 bin/
 vendor/
+
+# TLS
+config/certs/
+*.crt
+*.key
+*.pem
+*.srl

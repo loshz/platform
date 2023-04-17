@@ -1,11 +1,18 @@
+# Build config.
 BUILD_NUMBER ?= dev
-DOCKER ?= sudo docker
-DOCKER_IMAGE ?= loshz/platform
 BIN_DIR ?= ${CURDIR}/bin
 GO_TEST_FLAGS ?= -failfast -race
 PROTOC_VERSION ?= 3.21.12
 
-.PHONY: docker/build docker/compose go/build go/lint go/test proto/check proto/install proto/build
+# Docker config.
+DOCKER ?= sudo docker
+DOCKER_IMAGE ?= loshz/platform
+
+# TLS config.
+TLS_CERT_DIR ?= ./config/certs
+TLS_SUBJ ?= /O=Platform/CN=localhost
+
+.PHONY: docker/build docker/compose go/build go/lint go/test proto/check proto/install proto/build tls/ca tls/certs
 
 docker/build:
 	$(DOCKER) build \
@@ -23,7 +30,7 @@ go/build: ./cmd/*
 	done
 
 go/lint:
-	@golangci-lint run
+	@golangci-lint run --config .golangci.yml
 
 go/test:
 	@go test $(GO_TEST_FLAGS) ./...
@@ -32,10 +39,31 @@ proto/check:
 	@protoc --version | grep $(PROTOC_VERSION) || (echo "Must use libprotoc $(PROTOC_VERSION)"; exit 1)
 
 proto/install:
-	@go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.29
-	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
+	@go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.30
+	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3
 
 proto/build: proto/check
 	@protoc --go_out=pkg/pb/v1 --go_opt=module=github.com/loshz/platform/pkg/pb/v1 \
 		--go-grpc_out=pkg/pb/v1 --go-grpc_opt=module=github.com/loshz/platform/pkg/pb/v1 \
 		./proto/v1/*.proto
+
+tls/ca:
+	@openssl genpkey -algorithm ED25519 -out $(TLS_CERT_DIR)/ca.key.pem
+	@openssl req -nodes -new -sha256 -x509 -key $(TLS_CERT_DIR)/ca.key.pem -out $(TLS_CERT_DIR)/ca.crt.pem \
+		-subj "$(TLS_SUBJ)"
+
+tls/certs:
+	@echo "Generating server certs..."
+	@openssl genpkey -algorithm ED25519 -out $(TLS_CERT_DIR)/server.key.pem
+	@openssl req -nodes -new -sha256 -key $(TLS_CERT_DIR)/server.key.pem -out $(TLS_CERT_DIR)/server.csr.pem \
+		-subj "$(TLS_SUBJ)"
+	@openssl x509 -req -sha256 -in $(TLS_CERT_DIR)/server.csr.pem \
+		-CA $(TLS_CERT_DIR)/ca.crt.pem -CAkey $(TLS_CERT_DIR)/ca.key.pem -CAcreateserial \
+		-out $(TLS_CERT_DIR)/server.crt.pem
+	@echo "Generating client certs..."
+	@openssl genpkey -algorithm ED25519 -out $(TLS_CERT_DIR)/client.key.pem
+	@openssl req -nodes -new -sha256 -key $(TLS_CERT_DIR)/client.key.pem -out $(TLS_CERT_DIR)/client.csr.pem \
+		-subj "$(TLS_SUBJ)"
+	@openssl x509 -req -sha256 -in $(TLS_CERT_DIR)/client.csr.pem \
+		-CA $(TLS_CERT_DIR)/ca.crt.pem -CAkey $(TLS_CERT_DIR)/ca.key.pem -CAcreateserial \
+		-out $(TLS_CERT_DIR)/client.crt.pem

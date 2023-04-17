@@ -40,7 +40,10 @@ func (s *Service) ServeGRPC(desc *grpc.ServiceDesc, svc interface{}) {
 	}
 
 	// Load TLS credentials.
-	creds, err := pgrpc.LoadGRPCCreds(s.Config.String(config.KeyGRPCServerCert), s.Config.String(config.KeyGRPCServerKey), s.Config.String(config.KeyGRPCClientCA))
+	cert := s.Config.String(config.KeyGRPCServerCert)
+	key := s.Config.String(config.KeyGRPCServerKey)
+	ca := s.Config.String(config.KeyGRPCClientCA)
+	creds, err := pgrpc.NewServerTransportCreds(cert, key, ca)
 	if err != nil {
 		log.Error().Err(err).Msg("error loading grpc tls credentials")
 		s.Exit(ExitError)
