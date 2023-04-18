@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -18,7 +19,6 @@ import (
 	"github.com/loshz/platform/pkg/leader"
 	plog "github.com/loshz/platform/pkg/log"
 	"github.com/loshz/platform/pkg/metrics"
-	pbv1 "github.com/loshz/platform/pkg/pb/v1"
 	"github.com/loshz/platform/pkg/version"
 )
 
@@ -30,16 +30,16 @@ const (
 // Service represents a platform application.
 type Service struct {
 	// UUID of the individual service including name prefix.
-	ID   string
-	name string
+	// E.g., service-xxxx-xxxx
+	ID string
 
 	// Service configuration.
 	Config *config.Config
 
 	// Global context used to signal service shutdown to spawned
 	// goroutines.
-	ctx    context.Context
-	cancel context.CancelFunc
+	ctx       context.Context
+	ctxCancel context.CancelFunc
 
 	// Store the current leadership status.
 	leader atomic.Bool
@@ -47,23 +47,18 @@ type Service struct {
 	// Service specific exit handlers.
 	exitHandlers    []ExitHandler
 	exitHandlersMtx sync.RWMutex
-
-	pbv1.UnimplementedPlatformServiceServer
 }
 
 // New creates a named Service with configurable dependencies.
 func New(name string) *Service {
-	// TODO: init deps here- config, DBs, etc.
-
 	// Configure context for service shutdown signals.
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Service{
-		ID:     fmt.Sprintf("%s-%s", name, uuid.New()),
-		Config: config.New(),
-		name:   name,
-		ctx:    ctx,
-		cancel: cancel,
+		ID:        fmt.Sprintf("%s-%s", name, uuid.New()),
+		Config:    config.New(),
+		ctx:       ctx,
+		ctxCancel: cancel,
 	}
 }
 
@@ -126,7 +121,7 @@ func (s *Service) Ctx() context.Context {
 // regardless of completion.
 func (s *Service) Exit(status int) {
 	// Cancel the service context.
-	s.cancel()
+	s.ctxCancel()
 
 	exitWait := 30 * time.Second
 	deadline := time.Now().Add(exitWait)
@@ -161,7 +156,7 @@ func (s *Service) Exit(status int) {
 // it will register itself as the leader and release leadership status
 // upon service exit.
 func (s *Service) registerLeader() {
-	fd, err := leader.Acquire(s.name)
+	fd, err := leader.Acquire(s.Name())
 	if err != nil {
 		log.Error().Err(err).Msg("error atempting leader election")
 		s.Exit(ExitError)
@@ -205,6 +200,10 @@ func (s *Service) start(run RunFunc) {
 
 	metrics.ServiceInfo.WithLabelValues(s.ID, version.Build).Inc()
 	log.Info().Msg("service started")
+}
+
+func (s *Service) Name() string {
+	return strings.SplitN(s.ID, "-", 2)[0]
 }
 
 // ExitHandler is a timed function ran only on service shutdown.
