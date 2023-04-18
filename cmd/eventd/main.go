@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 
 	"github.com/loshz/platform/pkg/config"
@@ -40,9 +41,20 @@ func run(s *service.Service) error {
 		grpc.ConnectionTimeout(s.Config.Duration(config.KeyGRPCServerConnTimeout)),
 	}
 
+	// Create a gRPC server and register the service.
 	srv := pgrpc.NewServer(s.Ctx(), opts)
 	srv.RegisterService(&pbv1.Eventd_ServiceDesc, &grpcServer{})
+
+	// Start the gRPC server in the background.
 	go srv.Serve(s.Config.Int(config.KeyGRPCServerPort))
+
+	// Listen for gRPC server errors and exit if received.
+	go func() {
+		if err := <-srv.Error(); err != nil {
+			log.Error().Err(err).Msg("grpc server error")
+			s.Exit(service.ExitError)
+		}
+	}()
 
 	return nil
 }
