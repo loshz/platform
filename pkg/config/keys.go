@@ -2,8 +2,9 @@ package config
 
 const (
 	// Service config.
-	KeyLogLevel              = "log.level"
-	KeyServiceStartupTimeout = "service.startup.timeout"
+	KeyServiceLogLevel        = "service.log.level"
+	KeyServiceStartupTimeout  = "service.startup.timeout"
+	KeyServiceShutdownTimeout = "service.shutdown.timeout"
 
 	// HTTPS/S server config.
 	KeyHTTPPort         = "http.port"

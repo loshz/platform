@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -43,10 +42,6 @@ type Service struct {
 
 	// Store the current leadership status.
 	leader atomic.Bool
-
-	// Service specific exit handlers.
-	exitHandlers    []ExitHandler
-	exitHandlersMtx sync.RWMutex
 }
 
 // New creates a named Service with configurable dependencies.
@@ -78,7 +73,7 @@ func (s *Service) Run(run RunFunc) {
 	s.loadRequiredConfig()
 
 	// Configure global logger.
-	plog.ConfigureGlobalLogging(s.Config.String(config.KeyLogLevel), s.ID, version.Build)
+	plog.ConfigureGlobalLogging(s.Config.String(config.KeyServiceLogLevel), s.ID, version.Build)
 
 	// Attempt to start the service.
 	s.start(run)
@@ -115,40 +110,11 @@ func (s *Service) Ctx() context.Context {
 	return s.ctx
 }
 
-// Exit the current process while attempting to run any of the Service's exit handlers.
-//
-// Each exit handler will run in its own goroutine and will force exit after 30s
-// regardless of completion.
+// Exit cancels the service's context in order to signal a shutdown to child processes.
+// It sleeps for a configurable time before signalling the process to exit.
 func (s *Service) Exit(status int) {
-	// Cancel the service context.
 	s.ctxCancel()
-
-	exitWait := 30 * time.Second
-	deadline := time.Now().Add(exitWait)
-	ctx, cancel := context.WithDeadline(context.Background(), deadline)
-
-	// Force exit after deadline.
-	time.AfterFunc(exitWait, func() {
-		log.Error().Msgf("service shutdown took longer than %s, aborting", exitWait)
-		cancel()
-		os.Exit(status)
-	})
-
-	s.exitHandlersMtx.RLock()
-	defer s.exitHandlersMtx.RUnlock()
-
-	// Run each exit handler in its own goroutine.
-	var wg sync.WaitGroup
-	for _, fn := range s.exitHandlers {
-		wg.Add(1)
-		go func(fn ExitHandler) {
-			defer wg.Done()
-			fn(ctx)
-		}(fn)
-	}
-
-	wg.Wait()
-	cancel()
+	time.Sleep(s.Config.Duration(config.KeyServiceShutdownTimeout))
 	os.Exit(status)
 }
 
@@ -206,18 +172,9 @@ func (s *Service) Name() string {
 	return strings.SplitN(s.ID, "-", 2)[0]
 }
 
-// ExitHandler is a timed function ran only on service shutdown.
-type ExitHandler func(context.Context)
-
-// AddExitHandler registers a function that should be called when the server is shutting down.
-func (s *Service) AddExitHandler(fn ExitHandler) {
-	s.exitHandlersMtx.Lock()
-	s.exitHandlers = append(s.exitHandlers, fn)
-	s.exitHandlersMtx.Unlock()
-}
-
 func (s *Service) loadRequiredConfig() {
-	s.Config.MustLoad(config.KeyLogLevel, "info", config.ParseLogLevel)
+	s.Config.MustLoad(config.KeyServiceLogLevel, "info", config.ParseLogLevel)
 	s.Config.MustLoad(config.KeyServiceStartupTimeout, "5s", config.ParseDuration)
+	s.Config.MustLoad(config.KeyServiceShutdownTimeout, "0", config.ParseDuration)
 	s.Config.MustLoad(config.KeyHTTPPort, 8001, config.ParseInt)
 }
