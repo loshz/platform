@@ -51,20 +51,23 @@ proto/build: proto/check
 tls/ca:
 	@openssl genpkey -algorithm ED25519 -out $(TLS_CERT_DIR)/ca.key.pem
 	@openssl req -nodes -new -sha256 -x509 -key $(TLS_CERT_DIR)/ca.key.pem -out $(TLS_CERT_DIR)/ca.crt.pem \
-		-subj "$(TLS_SUBJ)"
+		-subj "$(TLS_SUBJ)" \
+		-addext "subjectAltName = DNS:localhost,IP:0.0.0.0"
 
 tls/certs:
 	@echo "Generating server certs..."
 	@openssl genpkey -algorithm ED25519 -out $(TLS_CERT_DIR)/server.key.pem
 	@openssl req -nodes -new -sha256 -key $(TLS_CERT_DIR)/server.key.pem -out $(TLS_CERT_DIR)/server.csr.pem \
-		-subj "$(TLS_SUBJ)"
+		-subj "$(TLS_SUBJ)" \
+		-addext "subjectAltName = DNS:localhost,IP:0.0.0.0"
 	@openssl x509 -req -sha256 -in $(TLS_CERT_DIR)/server.csr.pem \
 		-CA $(TLS_CERT_DIR)/ca.crt.pem -CAkey $(TLS_CERT_DIR)/ca.key.pem -CAcreateserial \
 		-out $(TLS_CERT_DIR)/server.crt.pem
 	@echo "Generating client certs..."
 	@openssl genpkey -algorithm ED25519 -out $(TLS_CERT_DIR)/client.key.pem
 	@openssl req -nodes -new -sha256 -key $(TLS_CERT_DIR)/client.key.pem -out $(TLS_CERT_DIR)/client.csr.pem \
-		-subj "$(TLS_SUBJ)"
+		-subj "$(TLS_SUBJ)" \
+		-addext "subjectAltName = DNS:localhost,IP:0.0.0.0"
 	@openssl x509 -req -sha256 -in $(TLS_CERT_DIR)/client.csr.pem \
 		-CA $(TLS_CERT_DIR)/ca.crt.pem -CAkey $(TLS_CERT_DIR)/ca.key.pem -CAcreateserial \
 		-out $(TLS_CERT_DIR)/client.crt.pem

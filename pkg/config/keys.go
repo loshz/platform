@@ -11,6 +11,9 @@ const (
 	KeyHTTPWriteTimeout = "http.write.timeout"
 	KeyHTTPIdleTimeout  = "http.idle.timeout"
 
+	// gRPC TLS config.
+	KeyGRPCTLSCA = "grpc.tls.ca"
+
 	// gRPC server config.
 	KeyGRPCServerPort        = "grpc.server.port"
 	KeyGRPCServerCert        = "grpc.server.cert"
@@ -18,5 +21,6 @@ const (
 	KeyGRPCServerConnTimeout = "grpc.server.conn.timeout"
 
 	// gRPC client config.
-	KeyGRPCClientCA = "grpc.client.ca"
+	KeyGRPCClientCert = "grpc.client.cert"
+	KeyGRPCClientKey  = "grpc.client.key"
 )

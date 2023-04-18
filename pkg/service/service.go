@@ -110,6 +110,13 @@ func (s *Service) waitSignal() {
 	log.Info().Msg("stop signal received, starting shut down")
 }
 
+// Return the service context so other individual goroutines can
+// listen for a stop signal.
+// NOTE: this context is only cancelled upon receiving a call to s.Exit()
+func (s *Service) Ctx() context.Context {
+	return s.ctx
+}
+
 // Exit the current process while attempting to run any of the Service's exit handlers.
 //
 // Each exit handler will run in its own goroutine and will force exit after 30s

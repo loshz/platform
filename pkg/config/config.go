@@ -46,14 +46,14 @@ func (c *Config) Set(key string, value interface{}) {
 func (c *Config) Load(key string, value interface{}, fns ...ParseFunc) error {
 	normKey := normalizeKey(key)
 
-	// Check for default value.
-	if value == nil || value == "" {
-		return fmt.Errorf("default value for '%s' is required", normKey)
-	}
-
 	// Read valud from env vars.
 	if env := os.Getenv(normKey); env != "" {
 		value = env
+	}
+
+	// Check for default value.
+	if value == nil || value == "" {
+		return fmt.Errorf("error: required config value '%s' not set", normKey)
 	}
 
 	// Run validate funtions.

@@ -18,9 +18,10 @@ func NewTLSConfig(crt, key string) (*tls.Config, error) {
 	}
 
 	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		ClientAuth:   tls.RequireAndVerifyClientCert,
-		MinVersion:   tls.VersionTLS13,
+		Certificates:       []tls.Certificate{cert},
+		ClientAuth:         tls.RequireAndVerifyClientCert,
+		MinVersion:         tls.VersionTLS13,
+		InsecureSkipVerify: true, // TODO: use Let's Encrypt/mkcert?
 	}
 
 	return tlsConfig, nil
@@ -44,7 +45,7 @@ func NewCertPool(ca string) (*x509.CertPool, error) {
 
 // NewServerTransportCreds creates gRPC Transport Credentials with a client CA
 // configured.
-func NewServerTransportCreds(crt, key, ca string) (credentials.TransportCredentials, error) {
+func NewServerTransportCreds(ca, crt, key string) (credentials.TransportCredentials, error) {
 	capool, err := NewCertPool(ca)
 	if err != nil {
 		return nil, fmt.Errorf("error loading ca cert pool : %w", err)
@@ -63,7 +64,7 @@ func NewServerTransportCreds(crt, key, ca string) (credentials.TransportCredenti
 
 // NewClientTransportCreds creates gRPC Transport Credentials with a root CA
 // configured.
-func NewClientTransportCreds(crt, key, ca string) (credentials.TransportCredentials, error) {
+func NewClientTransportCreds(ca, crt, key string) (credentials.TransportCredentials, error) {
 	capool, err := NewCertPool(ca)
 	if err != nil {
 		return nil, fmt.Errorf("error loading ca cert pool : %w", err)

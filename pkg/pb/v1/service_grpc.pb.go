@@ -28,7 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PlatformServiceClient interface {
 	// Status...
-	Status(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*StatusResponse, error)
+	Status(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PlatformServiceStatusResponse, error)
 }
 
 type platformServiceClient struct {
@@ -39,8 +39,8 @@ func NewPlatformServiceClient(cc grpc.ClientConnInterface) PlatformServiceClient
 	return &platformServiceClient{cc}
 }
 
-func (c *platformServiceClient) Status(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*StatusResponse, error) {
-	out := new(StatusResponse)
+func (c *platformServiceClient) Status(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PlatformServiceStatusResponse, error) {
+	out := new(PlatformServiceStatusResponse)
 	err := c.cc.Invoke(ctx, PlatformService_Status_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (c *platformServiceClient) Status(ctx context.Context, in *emptypb.Empty, o
 // for forward compatibility
 type PlatformServiceServer interface {
 	// Status...
-	Status(context.Context, *emptypb.Empty) (*StatusResponse, error)
+	Status(context.Context, *emptypb.Empty) (*PlatformServiceStatusResponse, error)
 	mustEmbedUnimplementedPlatformServiceServer()
 }
 
@@ -61,7 +61,7 @@ type PlatformServiceServer interface {
 type UnimplementedPlatformServiceServer struct {
 }
 
-func (UnimplementedPlatformServiceServer) Status(context.Context, *emptypb.Empty) (*StatusResponse, error) {
+func (UnimplementedPlatformServiceServer) Status(context.Context, *emptypb.Empty) (*PlatformServiceStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Status not implemented")
 }
 func (UnimplementedPlatformServiceServer) mustEmbedUnimplementedPlatformServiceServer() {}

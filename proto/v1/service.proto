@@ -8,16 +8,18 @@ option go_package = "github.com/loshz/platform/pkg/pb/v1;pbv1";
 
 service PlatformService {
   // Status...
-  rpc Status(google.protobuf.Empty) returns (StatusResponse) {}
+  rpc Status(google.protobuf.Empty) returns (PlatformServiceStatusResponse) {}
 }
 
-enum Status {
+enum PlatformServiceStatus {
   STATUS_UNSPECIFIED = 0;
   STATUS_OK = 1;
   STATUS_ERROR = 2;
+  STATUS_DEGRADED = 4;
 }
 
-message StatusResponse {
+message PlatformServiceStatusResponse {
   string service = 1;
-  Status status = 2;
+  PlatformServiceStatus status = 2;
+  bool leader = 3;
 }

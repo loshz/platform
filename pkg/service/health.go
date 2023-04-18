@@ -52,6 +52,8 @@ func healthHandler(service string, services []HealthCheckedDependency) http.Hand
 			Status:  HealthStatusOK,
 		}
 
+		w.Header().Set("Content-Type", "application/json")
+
 		// Check for a simple liveness status and return early.
 		if status := r.URL.Query().Get("status"); status != "ready" {
 			w.WriteHeader(http.StatusOK)
@@ -94,8 +96,6 @@ func healthHandler(service string, services []HealthCheckedDependency) http.Hand
 
 		// Wait for all checks to finish.
 		wg.Wait()
-
-		w.Header().Set("Content-Type", "application/json")
 
 		// Return 503 if any health checks failed.
 		if res.Status == HealthStatusFailing {

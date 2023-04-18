@@ -29,6 +29,7 @@ RUN addgroup -g 2000 -S $USER \
 
 # Copy operator binary from build stage 0
 COPY --from=0 --chown=$USER /go/bin/platform/ /bin/
+COPY --chown=$USER ./config/certs /home/$USER/certs
 
 WORKDIR /home/$USER
 

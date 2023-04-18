@@ -3,6 +3,6 @@ datasources:
     type: prometheus
     access: proxy
     uid: platform
-    url: http://localhost:9090
+    url: http://prometheus:9090
     isDefault: true
     editable: false
