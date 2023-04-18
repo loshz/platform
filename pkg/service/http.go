@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/pprof"
@@ -30,9 +31,18 @@ func (s *Service) serveHTTP() {
 	// Expose the registered metrics via HTTP.
 	router.Handle("/metrics", promhttp.Handler())
 
-	// Expose health check
-	// TODO: define service dependencies
-	router.HandleFunc("/health", healthHandler(s.ID, nil))
+	// Expose basic health check.
+	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		res := struct {
+			Service string `json:"service"`
+			Status  string `json:"status"`
+			Leader  bool   `json:"leader"`
+		}{s.ID, "OK", s.IsLeader()}
+
+		if err := json.NewEncoder(w).Encode(res); err != nil {
+			log.Error().Err(err).Msg("error encoding health check response data")
+		}
+	})
 
 	srv := &http.Server{
 		Addr:         port,

@@ -18,6 +18,7 @@ import (
 	"github.com/loshz/platform/pkg/leader"
 	plog "github.com/loshz/platform/pkg/log"
 	"github.com/loshz/platform/pkg/metrics"
+	pbv1 "github.com/loshz/platform/pkg/pb/v1"
 	"github.com/loshz/platform/pkg/version"
 )
 
@@ -41,11 +42,13 @@ type Service struct {
 	cancel context.CancelFunc
 
 	// Store the current leadership status.
-	leader atomic.Int32
+	leader atomic.Bool
 
 	// Service specific exit handlers.
 	exitHandlers    []ExitHandler
 	exitHandlersMtx sync.RWMutex
+
+	pbv1.UnimplementedPlatformServiceServer
 }
 
 // New creates a named Service with configurable dependencies.
@@ -166,14 +169,14 @@ func (s *Service) registerLeader() {
 	defer leader.Release(fd)
 
 	log.Info().Msg("leadership status acquired")
-	s.leader.Store(1)
+	s.leader.Store(true)
 
 	<-s.ctx.Done()
 }
 
 // IsLeader returns the status of the current service's leadership.
 func (s *Service) IsLeader() bool {
-	return s.leader.Load() == 1
+	return s.leader.Load()
 }
 
 // start attempts to run the service with an initial timeout.

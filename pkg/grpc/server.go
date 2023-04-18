@@ -9,6 +9,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Server is a wrapper around a *grpc.Server. It provides helper functions
+// for starting the server and registering services.
 type Server struct {
 	ctx context.Context
 	srv *grpc.Server
@@ -25,9 +27,8 @@ func (s *Server) RegisterService(desc *grpc.ServiceDesc, svc interface{}) {
 	s.srv.RegisterService(desc, svc)
 }
 
-// Serve configures, registers services and starts a gRPC server on a given port.
-// It is intentially not called in Start() as not every service requires a gRPC server,
-// therefore it should be called directly by the service itself.
+// Server starts the *grpc.Server on a given port in a goroutine. It waits for the
+// server's context to be done before gracefully shutting down.
 func (s *Server) Serve(port int) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {

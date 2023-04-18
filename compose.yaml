@@ -28,6 +28,8 @@ services:
     build: .
     networks:
       - bdg0
+    ports:
+      - 8001:8001
     command: trafficd
     environment:
       PLATFORM_LOG_LEVEL: "info"
@@ -40,6 +42,8 @@ services:
     build: .
     networks:
       - bdg0
+    ports:
+      - 8002:8002
     command: eventd
     environment:
       PLATFORM_LOG_LEVEL: "info"

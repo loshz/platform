@@ -41,7 +41,7 @@ func run(s *service.Service) error {
 	}
 
 	srv := pgrpc.NewServer(s.Ctx(), opts)
-	srv.RegisterService(&pbv1.PlatformService_ServiceDesc, &service.StatusServer{})
+	srv.RegisterService(&pbv1.PlatformService_ServiceDesc, s)
 	srv.RegisterService(&pbv1.Eventd_ServiceDesc, &grpcServer{})
 	go srv.Serve(s.Config.Int(config.KeyGRPCServerPort))
 

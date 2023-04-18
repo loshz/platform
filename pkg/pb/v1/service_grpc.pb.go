@@ -27,7 +27,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PlatformServiceClient interface {
-	// Status...
+	// Status responds with the current status of a platform service.
 	Status(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PlatformServiceStatusResponse, error)
 }
 
@@ -52,7 +52,7 @@ func (c *platformServiceClient) Status(ctx context.Context, in *emptypb.Empty, o
 // All implementations must embed UnimplementedPlatformServiceServer
 // for forward compatibility
 type PlatformServiceServer interface {
-	// Status...
+	// Status responds with the current status of a platform service.
 	Status(context.Context, *emptypb.Empty) (*PlatformServiceStatusResponse, error)
 	mustEmbedUnimplementedPlatformServiceServer()
 }

@@ -7,7 +7,7 @@ import "google/protobuf/empty.proto";
 option go_package = "github.com/loshz/platform/pkg/pb/v1;pbv1";
 
 service PlatformService {
-  // Status...
+  // Status responds with the current status of a platform service.
   rpc Status(google.protobuf.Empty) returns (PlatformServiceStatusResponse) {}
 }
 
@@ -15,7 +15,7 @@ enum PlatformServiceStatus {
   STATUS_UNSPECIFIED = 0;
   STATUS_OK = 1;
   STATUS_ERROR = 2;
-  STATUS_DEGRADED = 4;
+  STATUS_DEGRADED = 3;
 }
 
 message PlatformServiceStatusResponse {
