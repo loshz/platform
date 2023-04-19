@@ -42,11 +42,11 @@ func run(s *service.Service) error {
 	}
 
 	// Create a gRPC server and register the service.
-	srv := pgrpc.NewServer(s.Ctx(), opts)
+	srv := pgrpc.NewServer(opts)
 	srv.RegisterService(&pbv1.Eventd_ServiceDesc, &grpcServer{})
 
 	// Start the gRPC server in the background.
-	go srv.Serve(s.Config.Int(config.KeyGRPCServerPort))
+	go srv.Serve(s.Ctx(), s.Config.Int(config.KeyGRPCServerPort))
 
 	// Listen for gRPC server errors and exit if received.
 	go func() {
