@@ -18,7 +18,7 @@ func main() {
 	s := service.New("trafficd")
 
 	// Load required service config.
-	s.LoadGRPCClentConfig()
+	s.LoadGRPCClientConfig()
 
 	s.Run(run)
 }

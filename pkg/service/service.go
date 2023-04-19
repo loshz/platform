@@ -70,7 +70,7 @@ type RunFunc func(*Service) error
 // signal to be received before attempting to gracefully shutdown.
 func (s *Service) Run(run RunFunc) {
 	// Initialize required service config.
-	s.loadRequiredConfig()
+	s.LoadRequiredConfig()
 
 	// Configure global logger.
 	plog.ConfigureGlobalLogging(s.Config.String(config.KeyServiceLogLevel), s.ID, version.Build)
@@ -170,11 +170,4 @@ func (s *Service) start(run RunFunc) {
 
 func (s *Service) Name() string {
 	return strings.SplitN(s.ID, "-", 2)[0]
-}
-
-func (s *Service) loadRequiredConfig() {
-	s.Config.MustLoad(config.KeyServiceLogLevel, "info", config.ParseLogLevel)
-	s.Config.MustLoad(config.KeyServiceStartupTimeout, "5s", config.ParseDuration)
-	s.Config.MustLoad(config.KeyServiceShutdownTimeout, "0", config.ParseDuration)
-	s.Config.MustLoad(config.KeyHTTPPort, 8001, config.ParseInt)
 }
