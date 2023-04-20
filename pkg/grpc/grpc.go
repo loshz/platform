@@ -10,11 +10,13 @@ import (
 	"github.com/loshz/platform/pkg/metrics"
 )
 
+var now = time.Now
+
 // StreamInterceptor instruments and logs information about gRPC stream calls.
 func StreamInterceptor(service_id string) grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		// Time the underlying request.
-		start := time.Now()
+		start := now()
 		err := handler(srv, ss)
 		latency := time.Since(start)
 
@@ -33,7 +35,7 @@ func StreamInterceptor(service_id string) grpc.StreamServerInterceptor {
 // UnaryInterceptor instruments and logs information about gRPC unary calls.
 func UnaryInterceptor(service_id string) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		start := time.Now()
+		start := now()
 		res, err := handler(ctx, req)
 		latency := time.Since(start)
 

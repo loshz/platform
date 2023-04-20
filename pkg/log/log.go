@@ -8,7 +8,7 @@ import (
 
 // ConfigureGlobalLogging parses a given log level and sets it globally.
 func ConfigureGlobalLogging(level, service, build string) {
-	// parse and set the global log level
+	// Parse and set the global log level.
 	lvl, err := zerolog.ParseLevel(level)
 	if err != nil {
 		panic(err)
@@ -17,7 +17,7 @@ func ConfigureGlobalLogging(level, service, build string) {
 	// NOTE: global logger settings can be found here: https://github.com/rs/zerolog#global-settings
 	zerolog.SetGlobalLevel(lvl)
 
-	// configure global logger defaults
+	// Configure global logger defaults.
 	log.Logger = log.Logger.With().Fields(map[string]interface{}{
 		"service": service,
 		"version": build,
