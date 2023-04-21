@@ -46,7 +46,7 @@ func (c *Config) Set(key string, value interface{}) {
 func (c *Config) Load(key string, value interface{}, fns ...ParseFunc) error {
 	normKey := normalizeKey(key)
 
-	// Read valud from env vars.
+	// Read value from env vars.
 	if env := os.Getenv(normKey); env != "" {
 		value = env
 	}

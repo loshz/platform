@@ -61,11 +61,14 @@ func New(name string) *Service {
 	}
 }
 
+// Service getter methods.
+func (s *Service) Ctx() context.Context { return s.ctx }
+func (s *Service) ID() string           { return s.id }
+func (s *Service) IsLeader() bool       { return s.leader.Load() }
+func (s *Service) Name() string         { return strings.SplitN(s.ID(), "-", 2)[0] }
+
 // RunFunc is a function that will be called by Run to initialize a service.
 // If this function returns an error then the server will immediately shut down.
-//
-// NOTE: the contents of this function should run in a goroutine in order for it
-// not to block.
 type RunFunc func(*Service) error
 
 // Run starts the Service and ensures all dependencies are initialised.
@@ -143,11 +146,6 @@ func (s *Service) registerLeader() {
 	<-s.ctx.Done()
 }
 
-// IsLeader returns the status of the current service's leadership.
-func (s *Service) IsLeader() bool {
-	return s.leader.Load()
-}
-
 // start attempts to run the service with an initial timeout.
 // If the deadline exceeds the time taken to run the service, it is treated
 // as a failed start.
@@ -179,8 +177,3 @@ func (s *Service) start(run RunFunc) error {
 
 	return nil
 }
-
-// Service getter methods.
-func (s *Service) Ctx() context.Context { return s.ctx }
-func (s *Service) ID() string           { return s.id }
-func (s *Service) Name() string         { return strings.SplitN(s.ID(), "-", 2)[0] }
