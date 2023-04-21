@@ -36,8 +36,8 @@ func run(s *service.Service) error {
 	// Create gRPC server options including interceptors and timeout.
 	opts := []grpc.ServerOption{
 		grpc.Creds(creds),
-		grpc.UnaryInterceptor(pgrpc.UnaryInterceptor(s.ID)),
-		grpc.StreamInterceptor(pgrpc.StreamInterceptor(s.ID)),
+		grpc.UnaryInterceptor(pgrpc.UnaryInterceptor(s.ID())),
+		grpc.StreamInterceptor(pgrpc.StreamInterceptor(s.ID())),
 		grpc.ConnectionTimeout(s.Config.Duration(config.KeyGRPCServerConnTimeout)),
 	}
 

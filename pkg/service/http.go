@@ -37,7 +37,7 @@ func (s *Service) serveHTTP() {
 			Service string `json:"service"`
 			Status  string `json:"status"`
 			Leader  bool   `json:"leader"`
-		}{s.ID, "OK", s.IsLeader()}
+		}{s.ID(), "OK", s.IsLeader()}
 
 		if err := json.NewEncoder(w).Encode(res); err != nil {
 			log.Error().Err(err).Msg("error encoding health check response data")
@@ -54,8 +54,8 @@ func (s *Service) serveHTTP() {
 	go func() {
 		log.Info().Msgf("local http server running on %s", port)
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.Error().Err(err).Msg("local http server error")
-			s.Exit(ExitError)
+			s.errCh <- fmt.Errorf("local http server error: %w", err)
+			return
 		}
 	}()
 

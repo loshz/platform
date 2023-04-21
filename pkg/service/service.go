@@ -28,17 +28,20 @@ const (
 
 // Service represents a platform application.
 type Service struct {
-	// UUID of the individual service including name prefix.
-	// E.g., service-xxxx-xxxx
-	ID string
-
 	// Service configuration.
 	Config *config.Config
+
+	// UUID of the individual service including name prefix.
+	// E.g., service-xxxx-xxxx
+	id string
 
 	// Global context used to signal service shutdown to spawned
 	// goroutines.
 	ctx       context.Context
 	ctxCancel context.CancelFunc
+
+	// Channel for sending/receiving internal service errors.
+	errCh chan error
 
 	// Store the current leadership status.
 	leader atomic.Bool
@@ -50,10 +53,11 @@ func New(name string) *Service {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Service{
-		ID:        fmt.Sprintf("%s-%s", name, uuid.New()),
 		Config:    config.New(),
+		id:        fmt.Sprintf("%s-%s", name, uuid.New()),
 		ctx:       ctx,
 		ctxCancel: cancel,
+		errCh:     make(chan error),
 	}
 }
 
@@ -73,10 +77,13 @@ func (s *Service) Run(run RunFunc) {
 	s.LoadRequiredConfig()
 
 	// Configure global logger.
-	plog.ConfigureGlobalLogging(s.Config.String(config.KeyServiceLogLevel), s.ID, version.Build)
+	plog.ConfigureGlobalLogging(s.Config.String(config.KeyServiceLogLevel), s.ID(), version.Build)
 
 	// Attempt to start the service.
-	s.start(run)
+	if err := s.start(run); err != nil {
+		log.Error().Err(err).Msg("service startup error")
+		s.Exit(ExitError)
+	}
 
 	// Start the local http server.
 	go s.serveHTTP()
@@ -84,30 +91,31 @@ func (s *Service) Run(run RunFunc) {
 	// Attempt to acquire leader election.
 	go s.registerLeader()
 
-	// Wait for an exit signal.
-	s.waitSignal()
+	// Wait for an exit signal or service error.
+	status := s.waitSignal()
 
 	// Attempt to gracefully shutdown.
-	s.Exit(ExitOk)
+	s.Exit(status)
 }
 
-// waitSignal blocks waiting for operating system signals.
-//
-// By default, it will handle calls to SIGINT and SIGTERM.
-func (s *Service) waitSignal() {
+// waitSignal blocks waiting for operating system signals or an internal
+// service error.
+func (s *Service) waitSignal() int {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
 	// Wait for signal to be received.
-	<-stop
-	log.Info().Msg("stop signal received, starting shut down")
-}
+	select {
+	case <-stop:
+		log.Info().Msg("stop signal received, starting shut down")
+	case err := <-s.errCh:
+		// Always return an error as nothing should be sending nil
+		// to this channel.
+		log.Error().Err(err).Msg("internal service error")
+		return ExitError
+	}
 
-// Return the service context so other individual goroutines can
-// listen for a stop signal.
-// NOTE: this context is only cancelled upon receiving a call to s.Exit()
-func (s *Service) Ctx() context.Context {
-	return s.ctx
+	return ExitOk
 }
 
 // Exit cancels the service's context in order to signal a shutdown to child processes.
@@ -124,8 +132,8 @@ func (s *Service) Exit(status int) {
 func (s *Service) registerLeader() {
 	fd, err := leader.Acquire(s.Name())
 	if err != nil {
-		log.Error().Err(err).Msg("error atempting leader election")
-		s.Exit(ExitError)
+		s.errCh <- fmt.Errorf("error atempting leader election: %w", err)
+		return
 	}
 	defer leader.Release(fd)
 
@@ -143,31 +151,36 @@ func (s *Service) IsLeader() bool {
 // start attempts to run the service with an initial timeout.
 // If the deadline exceeds the time taken to run the service, it is treated
 // as a failed start.
-func (s *Service) start(run RunFunc) {
+func (s *Service) start(run RunFunc) error {
 	// Configure startup timeout.
 	timeout := s.Config.Duration(config.KeyServiceStartupTimeout)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	// Wait for the context to exceed the given deadline, and exit if so.
+	// Attempt to run the main service func and record error.
+	errCh := make(chan error, 1)
 	go func() {
-		<-ctx.Done()
-		if ctx.Err() == context.DeadlineExceeded {
-			log.Error().Msgf("service startup took longer than the configured %s timeout, aborting", timeout)
-			s.Exit(ExitError)
-		}
+		errCh <- run(s)
 	}()
 
-	// Attempt to run the main service func.
-	if err := run(s); err != nil {
-		log.Error().Err(err).Msg("error running service")
-		s.Exit(ExitError)
+	select {
+	case <-ctx.Done():
+		if ctx.Err() == context.DeadlineExceeded {
+			return fmt.Errorf("startup deadline (%s) exceeded", timeout)
+		}
+	case err := <-errCh:
+		if err != nil {
+			return fmt.Errorf("error running service: %w", err)
+		}
 	}
 
-	metrics.ServiceInfo.WithLabelValues(s.ID, version.Build).Inc()
+	metrics.ServiceInfo.WithLabelValues(s.ID(), version.Build).Inc()
 	log.Info().Msg("service started")
+
+	return nil
 }
 
-func (s *Service) Name() string {
-	return strings.SplitN(s.ID, "-", 2)[0]
-}
+// Service getter methods.
+func (s *Service) Ctx() context.Context { return s.ctx }
+func (s *Service) ID() string           { return s.id }
+func (s *Service) Name() string         { return strings.SplitN(s.ID(), "-", 2)[0] }
