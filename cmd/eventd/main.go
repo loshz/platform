@@ -43,7 +43,7 @@ func run(s *service.Service) error {
 
 	// Create a gRPC server and register the service.
 	srv := pgrpc.NewServer(opts)
-	srv.RegisterService(&pbv1.Eventd_ServiceDesc, &grpcServer{})
+	srv.RegisterService(&pbv1.EventdService_ServiceDesc, &grpcServer{})
 
 	// Start the gRPC server in the background.
 	go srv.Serve(s.Ctx(), s.Config.Int(config.KeyGRPCServerPort))

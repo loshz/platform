@@ -9,7 +9,7 @@ import (
 )
 
 type grpcServer struct {
-	pbv1.UnimplementedEventdServer
+	pbv1.UnimplementedEventdServiceServer
 }
 
 func (s *grpcServer) Event(ctx context.Context, req *pbv1.EventRequest) (*pbv1.EventResponse, error) {

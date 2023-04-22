@@ -41,7 +41,7 @@ func run(s *service.Service) error {
 			// TODO: s.Exit() or continually check for conn.
 		}
 		defer conn.Close()
-		client := pbv1.NewEventdClient(conn)
+		client := pbv1.NewEventdServiceClient(conn)
 
 		t := time.NewTicker(10 * time.Second)
 		for {

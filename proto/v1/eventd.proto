@@ -1,14 +1,18 @@
 syntax = "proto3";
 
-package service.v1;
+package proto.v1;
 
 option go_package = "github.com/loshz/platform/pkg/pb/v1;pbv1";
 
-service Eventd {
+service EventdService {
   // Event takes host level events.
   rpc Event(EventRequest) returns (EventResponse) {}
 }
 
-message EventRequest { string hostname = 1; }
+message EventRequest {
+  string hostname = 1;
+}
 
-message EventResponse { string uuid = 1; }
+message EventResponse {
+  string uuid = 1;
+}

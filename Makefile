@@ -2,7 +2,6 @@
 BUILD_NUMBER ?= dev
 BIN_DIR ?= ${CURDIR}/bin
 GO_TEST_FLAGS ?= -failfast -race
-PROTOC_VERSION ?= 3.21.12
 
 # Docker config.
 DOCKER ?= sudo docker
@@ -10,7 +9,6 @@ DOCKER_IMAGE ?= loshz/platform
 
 # TLS config.
 TLS_CERT_DIR ?= ./config/certs
-TLS_SUBJ ?= /O=Platform/CN=localhost
 
 .PHONY: docker/build docker/compose go/build go/lint go/test proto/check proto/install proto/build tls/ca tls/certs
 
@@ -36,9 +34,11 @@ go/test:
 	@go test $(GO_TEST_FLAGS) ./...
 
 proto/check:
-	@protoc --version | grep $(PROTOC_VERSION) || (echo "Must use libprotoc $(PROTOC_VERSION)"; exit 1)
+	@buf format --diff --exit-code
+	@buf lint
 
 proto/install:
+	@go install github.com/bufbuild/buf/cmd/buf@v1.17.0
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.30
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3
 
@@ -51,14 +51,14 @@ proto/build: proto/check
 tls/ca:
 	@openssl genpkey -algorithm ED25519 -out $(TLS_CERT_DIR)/ca.key.pem
 	@openssl req -nodes -new -sha256 -x509 -key $(TLS_CERT_DIR)/ca.key.pem -out $(TLS_CERT_DIR)/ca.crt.pem \
-		-subj "$(TLS_SUBJ)" \
+		-subj "/O=Platform/CN=localhost" \
 		-addext "subjectAltName = DNS:localhost,IP:0.0.0.0"
 
 tls/certs:
 	@echo "Generating server certs..."
 	@openssl genpkey -algorithm ED25519 -out $(TLS_CERT_DIR)/server.key.pem
 	@openssl req -nodes -new -sha256 -key $(TLS_CERT_DIR)/server.key.pem -out $(TLS_CERT_DIR)/server.csr.pem \
-		-subj "$(TLS_SUBJ)" \
+		-subj "/O=Platform/CN=localhost" \
 		-addext "subjectAltName = DNS:localhost,IP:0.0.0.0"
 	@openssl x509 -req -sha256 -in $(TLS_CERT_DIR)/server.csr.pem \
 		-CA $(TLS_CERT_DIR)/ca.crt.pem -CAkey $(TLS_CERT_DIR)/ca.key.pem -CAcreateserial \
@@ -66,7 +66,7 @@ tls/certs:
 	@echo "Generating client certs..."
 	@openssl genpkey -algorithm ED25519 -out $(TLS_CERT_DIR)/client.key.pem
 	@openssl req -nodes -new -sha256 -key $(TLS_CERT_DIR)/client.key.pem -out $(TLS_CERT_DIR)/client.csr.pem \
-		-subj "$(TLS_SUBJ)" \
+		-subj "/O=Platform/CN=localhost" \
 		-addext "subjectAltName = DNS:localhost,IP:0.0.0.0"
 	@openssl x509 -req -sha256 -in $(TLS_CERT_DIR)/client.csr.pem \
 		-CA $(TLS_CERT_DIR)/ca.crt.pem -CAkey $(TLS_CERT_DIR)/ca.key.pem -CAcreateserial \

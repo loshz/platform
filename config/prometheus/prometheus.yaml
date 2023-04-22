@@ -1,10 +1,6 @@
 scrape_configs:
-  - job_name: 'trafficd'
-    scrape_interval: '10s'
-    static_configs:
-      - targets: ['trafficd:8001']
-
-  - job_name: 'eventd'
-    scrape_interval: '10s'
-    static_configs:
-      - targets: ['eventd:8002']
+- job_name: 'platform'
+  scrape_interval: '10s'
+  file_sd_configs:
+  - files:
+    - '/tmp/platform_services.json'
