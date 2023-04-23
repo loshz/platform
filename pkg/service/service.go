@@ -15,7 +15,6 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/loshz/platform/pkg/config"
-	"github.com/loshz/platform/pkg/leader"
 	plog "github.com/loshz/platform/pkg/log"
 	"github.com/loshz/platform/pkg/metrics"
 	"github.com/loshz/platform/pkg/version"
@@ -91,9 +90,6 @@ func (s *Service) Run(run RunFunc) {
 	// Start the local http server.
 	go s.serveHTTP()
 
-	// Attempt to acquire leader election.
-	go s.registerLeader()
-
 	// Wait for an exit signal or service error.
 	status := s.waitSignal()
 
@@ -127,23 +123,6 @@ func (s *Service) Exit(status int) {
 	s.ctxCancel()
 	time.Sleep(s.Config.Duration(config.KeyServiceShutdownTimeout))
 	os.Exit(status)
-}
-
-// registerLeader attempts to acquire election status. If successful,
-// it will register itself as the leader and release leadership status
-// upon service exit.
-func (s *Service) registerLeader() {
-	fd, err := leader.Acquire(s.Name())
-	if err != nil {
-		s.errCh <- fmt.Errorf("error atempting leader election: %w", err)
-		return
-	}
-	defer leader.Release(fd)
-
-	log.Info().Msg("leadership status acquired")
-	s.leader.Store(true)
-
-	<-s.ctx.Done()
 }
 
 // start attempts to run the service with an initial timeout.
