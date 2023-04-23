@@ -10,7 +10,7 @@ DOCKER_IMAGE ?= loshz/platform
 # TLS config.
 TLS_CERT_DIR ?= ./config/certs
 
-.PHONY: docker/build docker/compose go/build go/lint go/test proto/check proto/install proto/build tls/ca tls/certs
+.PHONY: docker/build docker/compose go/build go/lint go/test proto/install proto/check proto/build tls/ca tls/certs
 
 docker/build:
 	$(DOCKER) build \
@@ -33,17 +33,16 @@ go/lint:
 go/test:
 	@go test $(GO_TEST_FLAGS) ./...
 
-proto/check:
-	@buf format --diff --exit-code
-	@buf lint
-
 proto/install:
 	@go install github.com/bufbuild/buf/cmd/buf@v1.17.0
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.30
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3
 
+proto/check:
+	@buf format --diff --exit-code
+	@buf lint
+
 proto/build: proto/check
-	@echo "Generating proto..."
 	@protoc --go_out=pkg/pb/v1 --go_opt=module=github.com/loshz/platform/pkg/pb/v1 \
 		--go-grpc_out=pkg/pb/v1 --go-grpc_opt=module=github.com/loshz/platform/pkg/pb/v1 \
 		./proto/v1/*.proto

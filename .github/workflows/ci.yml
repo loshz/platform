@@ -38,6 +38,5 @@ jobs:
         sudo unzip -o protoc-21.12-linux-x86_64.zip -d /usr/local 'include/*'
 
     - run: make proto/install
-    - run: make proto/check
     - run: make proto/build
     - run: git diff --exit-code ./pkg/pb

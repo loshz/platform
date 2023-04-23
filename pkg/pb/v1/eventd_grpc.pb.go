@@ -19,91 +19,91 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	EventdService_Event_FullMethodName = "/proto.v1.EventdService/Event"
+	EventService_Event_FullMethodName = "/proto.v1.EventService/Event"
 )
 
-// EventdServiceClient is the client API for EventdService service.
+// EventServiceClient is the client API for EventService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type EventdServiceClient interface {
+type EventServiceClient interface {
 	// Event takes host level events.
 	Event(ctx context.Context, in *EventRequest, opts ...grpc.CallOption) (*EventResponse, error)
 }
 
-type eventdServiceClient struct {
+type eventServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewEventdServiceClient(cc grpc.ClientConnInterface) EventdServiceClient {
-	return &eventdServiceClient{cc}
+func NewEventServiceClient(cc grpc.ClientConnInterface) EventServiceClient {
+	return &eventServiceClient{cc}
 }
 
-func (c *eventdServiceClient) Event(ctx context.Context, in *EventRequest, opts ...grpc.CallOption) (*EventResponse, error) {
+func (c *eventServiceClient) Event(ctx context.Context, in *EventRequest, opts ...grpc.CallOption) (*EventResponse, error) {
 	out := new(EventResponse)
-	err := c.cc.Invoke(ctx, EventdService_Event_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, EventService_Event_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// EventdServiceServer is the server API for EventdService service.
-// All implementations must embed UnimplementedEventdServiceServer
+// EventServiceServer is the server API for EventService service.
+// All implementations must embed UnimplementedEventServiceServer
 // for forward compatibility
-type EventdServiceServer interface {
+type EventServiceServer interface {
 	// Event takes host level events.
 	Event(context.Context, *EventRequest) (*EventResponse, error)
-	mustEmbedUnimplementedEventdServiceServer()
+	mustEmbedUnimplementedEventServiceServer()
 }
 
-// UnimplementedEventdServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedEventdServiceServer struct {
+// UnimplementedEventServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedEventServiceServer struct {
 }
 
-func (UnimplementedEventdServiceServer) Event(context.Context, *EventRequest) (*EventResponse, error) {
+func (UnimplementedEventServiceServer) Event(context.Context, *EventRequest) (*EventResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Event not implemented")
 }
-func (UnimplementedEventdServiceServer) mustEmbedUnimplementedEventdServiceServer() {}
+func (UnimplementedEventServiceServer) mustEmbedUnimplementedEventServiceServer() {}
 
-// UnsafeEventdServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to EventdServiceServer will
+// UnsafeEventServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to EventServiceServer will
 // result in compilation errors.
-type UnsafeEventdServiceServer interface {
-	mustEmbedUnimplementedEventdServiceServer()
+type UnsafeEventServiceServer interface {
+	mustEmbedUnimplementedEventServiceServer()
 }
 
-func RegisterEventdServiceServer(s grpc.ServiceRegistrar, srv EventdServiceServer) {
-	s.RegisterService(&EventdService_ServiceDesc, srv)
+func RegisterEventServiceServer(s grpc.ServiceRegistrar, srv EventServiceServer) {
+	s.RegisterService(&EventService_ServiceDesc, srv)
 }
 
-func _EventdService_Event_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _EventService_Event_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EventRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EventdServiceServer).Event(ctx, in)
+		return srv.(EventServiceServer).Event(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EventdService_Event_FullMethodName,
+		FullMethod: EventService_Event_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EventdServiceServer).Event(ctx, req.(*EventRequest))
+		return srv.(EventServiceServer).Event(ctx, req.(*EventRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// EventdService_ServiceDesc is the grpc.ServiceDesc for EventdService service.
+// EventService_ServiceDesc is the grpc.ServiceDesc for EventService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var EventdService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.v1.EventdService",
-	HandlerType: (*EventdServiceServer)(nil),
+var EventService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.v1.EventService",
+	HandlerType: (*EventServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Event",
-			Handler:    _EventdService_Event_Handler,
+			Handler:    _EventService_Event_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

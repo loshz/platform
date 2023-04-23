@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	s := service.New("eventd")
+	s := service.New("discoveryd")
 
 	// Load required service config.
 	s.LoadGRPCServerConfig()
@@ -41,9 +41,13 @@ func run(s *service.Service) error {
 		grpc.ConnectionTimeout(s.Config.Duration(config.KeyGRPCServerConnTimeout)),
 	}
 
+	// Create a discovery server and start the service eviction process in the background.
+	ds := NewDiscoveryServer()
+	go ds.StartEvictionProcess(s.Ctx())
+
 	// Create a gRPC server and register the service.
 	srv := pgrpc.NewServer(opts)
-	srv.RegisterService(&pbv1.EventService_ServiceDesc, &grpcServer{})
+	srv.RegisterService(&pbv1.DiscoveryService_ServiceDesc, ds)
 
 	// Start the gRPC server in the background.
 	go srv.Serve(s.Ctx(), s.Config.Int(config.KeyGRPCServerPort))

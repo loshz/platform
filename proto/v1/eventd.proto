@@ -4,7 +4,7 @@ package proto.v1;
 
 option go_package = "github.com/loshz/platform/pkg/pb/v1;pbv1";
 
-service EventdService {
+service EventService {
   // Event takes host level events.
   rpc Event(EventRequest) returns (EventResponse) {}
 }

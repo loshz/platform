@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package proto.v1;
+
+option go_package = "github.com/loshz/platform/pkg/pb/v1;pbv1";
+
+service DiscoveryService {
+  rpc RegisterService(RegisterServiceRequest) returns (RegisterServiceResponse) {}
+  rpc DeregisterService(DeregisterServiceRequest) returns (DeregisterServiceResponse) {}
+  rpc GetService(GetServiceRequest) returns (GetServiceResponse) {}
+}
+
+message Service {
+  string uuid = 1;
+  uint32 http_port = 2;
+  uint32 grpc_port = 3;
+  int64 timestamp = 4;
+}
+
+message RegisterServiceRequest {
+  Service service = 1;
+}
+
+message RegisterServiceResponse {
+  Service service = 1;
+}
+
+message DeregisterServiceRequest {
+  string uuid = 1;
+}
+
+message DeregisterServiceResponse {
+  string uuid = 1;
+}
+
+message GetServiceRequest {
+  string name = 1;
+}
+
+message GetServiceResponse {
+  repeated Service services = 1;
+}
