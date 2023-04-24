@@ -1,8 +1,6 @@
 services:
   prometheus:
     image: prom/prometheus:v2.43.0
-    networks:
-      - bdg0
     command:
       - '--config.file=/etc/prometheus/prometheus.yaml'
     ports:
@@ -12,8 +10,6 @@ services:
 
   grafana:
     image: grafana/grafana:9.2.15
-    networks:
-      - bdg0
     depends_on:
       - prometheus
     ports:
@@ -24,33 +20,33 @@ services:
       - ./config/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml
       - ./config/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
 
-  trafficd:
+  discoveryd:
     build: .
-    networks:
-      - bdg0
-    ports:
-      - 8001:8001
-    command: trafficd
+    command: discoveryd
     environment:
       PLATFORM_HTTP_PORT: 8001
+      PLATFORM_GRPC_TLS_CA: "/home/platform/certs/ca.crt.pem"
+      PLATFORM_GRPC_SERVER_PORT: 8000
+      PLATFORM_GRPC_SERVER_CERT: "/home/platform/certs/server.crt.pem"
+      PLATFORM_GRPC_SERVER_KEY: "/home/platform/certs/server.key.pem"
+
+  trafficd:
+    build: .
+    command: trafficd
+    environment:
+      PLATFORM_HTTP_PORT: 8002
       PLATFORM_GRPC_TLS_CA: "/home/platform/certs/ca.crt.pem"
       PLATFORM_GRPC_CLIENT_CERT: "/home/platform/certs/client.crt.pem"
       PLATFORM_GRPC_CLIENT_KEY: "/home/platform/certs/client.key.pem"
 
   eventd:
     build: .
-    networks:
-      - bdg0
-    ports:
-      - 8002:8002
     command: eventd
     environment:
-      PLATFORM_HTTP_PORT: 8002
+      PLATFORM_HTTP_PORT: 8003
       PLATFORM_GRPC_TLS_CA: "/home/platform/certs/ca.crt.pem"
-      PLATFORM_GRPC_SERVER_PORT: 8003
+      PLATFORM_GRPC_SERVER_PORT: 8004
       PLATFORM_GRPC_SERVER_CERT: "/home/platform/certs/server.crt.pem"
       PLATFORM_GRPC_SERVER_KEY: "/home/platform/certs/server.key.pem"
-
-networks:
-  bdg0:
-    driver: bridge
+      PLATFORM_GRPC_CLIENT_CERT: "/home/platform/certs/client.crt.pem"
+      PLATFORM_GRPC_CLIENT_KEY: "/home/platform/certs/client.key.pem"

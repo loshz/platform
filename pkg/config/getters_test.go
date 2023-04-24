@@ -21,8 +21,9 @@ func TestMain(m *testing.M) {
 	testGetterConfig.Set("stringslice1", []string{"a", "b", "c"})
 	testGetterConfig.Set("stringslice2", "d,e,f")
 
-	// Set int values
+	// Set int/uint values
 	testGetterConfig.Set("intstring", "1")
+	testGetterConfig.Set("uintstring", "1")
 	testGetterConfig.Set("int", 1)
 	testGetterConfig.Set("uint", uint(1))
 	testGetterConfig.Set("int32", int32(1))
@@ -89,16 +90,34 @@ func TestConfigInt(t *testing.T) {
 	ints := []string{
 		"intstring",
 		"int",
-		"uint",
 		"int32",
-		"uint32",
 		"int64",
-		"uint64",
 	}
 
 	for _, in := range ints {
 		i := testGetterConfig.Int(in)
 		assert.Equal(t, 1, i)
+	}
+}
+
+func TestConfigUint(t *testing.T) {
+	t.Parallel()
+
+	// Assert that a not found key is zero.
+	i := testGetterConfig.Int("not_found")
+	assert.Empty(t, i)
+
+	// Assert that all int keys return the expected value.
+	ints := []string{
+		"uintstring",
+		"uint",
+		"uint32",
+		"uint64",
+	}
+
+	for _, in := range ints {
+		i := testGetterConfig.Uint(in)
+		assert.Equal(t, uint(1), i)
 	}
 }
 

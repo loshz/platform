@@ -121,7 +121,17 @@ func (s *Service) waitSignal() int {
 // It sleeps for a configurable time before signalling the process to exit.
 func (s *Service) Exit(status int) {
 	s.ctxCancel()
-	time.Sleep(s.Config.Duration(config.KeyServiceShutdownTimeout))
+
+	// Force exit after deadline.
+	time.AfterFunc(s.Config.Duration(config.KeyServiceShutdownTimeout), func() {
+		log.Error().Msg("service shutdown timeout expired")
+		os.Exit(status)
+	})
+
+	if err := s.DeregisterDiscovery(); err != nil {
+		log.Error().Err(err).Msg("error deregistering service from discovery")
+	}
+
 	os.Exit(status)
 }
 

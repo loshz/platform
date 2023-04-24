@@ -17,6 +17,7 @@ func main() {
 
 	// Load required service config.
 	s.LoadGRPCServerConfig()
+	s.LoadGRPCClientConfig()
 
 	s.Run(run)
 }
@@ -55,6 +56,9 @@ func run(s *service.Service) error {
 			s.Exit(service.ExitError)
 		}
 	}()
+
+	// Register service for discovery.
+	go s.RegisterDiscovery()
 
 	return nil
 }

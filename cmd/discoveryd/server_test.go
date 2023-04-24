@@ -97,21 +97,39 @@ func TestRegisterService(t *testing.T) {
 func TestDeregisterService(t *testing.T) {
 	server := NewDiscoveryServer()
 
-	// Create a valid service and manually register with server.
-	uuid := "test-service"
-	server.services[uuid] = &pbv1.Service{}
-	req := &pbv1.DeregisterServiceRequest{
-		Uuid: uuid,
-	}
-	res, err := server.DeregisterService(context.TODO(), req)
+	t.Run("TestNilUuid", func(t *testing.T) {
+		// Create a request with an empty uuid and attempt service deregistration.
+		req := &pbv1.DeregisterServiceRequest{
+			Uuid: "",
+		}
+		_, err := server.DeregisterService(context.TODO(), req)
 
-	// Assert the returned error is nil and the status code is OK.
-	assert.Nil(t, err)
-	assert.Equal(t, codes.OK, status.Code(err))
-	assert.Equal(t, uuid, res.GetUuid())
+		// Get the error status.
+		stat, _ := status.FromError(err)
 
-	// Assert the service was deleted from the server.
-	assert.Nil(t, server.services[uuid])
+		// Assert the returned error is due to an invalid argument.
+		assert.NotNil(t, err)
+		assert.Equal(t, codes.InvalidArgument, stat.Code())
+		assert.Equal(t, fmt.Sprintf(MsgMissingRequiredField, "uuid"), stat.Message())
+	})
+
+	t.Run("TestSuccess", func(t *testing.T) {
+		// Create a valid service and manually register with server.
+		uuid := "test-service"
+		server.services[uuid] = &pbv1.Service{}
+		req := &pbv1.DeregisterServiceRequest{
+			Uuid: uuid,
+		}
+		res, err := server.DeregisterService(context.TODO(), req)
+
+		// Assert the returned error is nil and the status code is OK.
+		assert.Nil(t, err)
+		assert.Equal(t, codes.OK, status.Code(err))
+		assert.Equal(t, uuid, res.GetUuid())
+
+		// Assert the service was deleted from the server.
+		assert.Nil(t, server.services[uuid])
+	})
 }
 
 func TestGetService(t *testing.T) {

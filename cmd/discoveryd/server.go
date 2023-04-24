@@ -32,6 +32,8 @@ func NewDiscoveryServer() *DiscoveryServer {
 	}
 }
 
+// EvictExpiredServices removes services that have a registration timestamp greater
+// then 5 minutes.
 func (ds *DiscoveryServer) EvictExpiredServices() {
 	ds.mtx.Lock()
 	defer ds.mtx.Unlock()
@@ -41,19 +43,18 @@ func (ds *DiscoveryServer) EvictExpiredServices() {
 	for uuid, svc := range ds.services {
 		expired := time.Now().Add(-5 * time.Minute)
 		if time.Unix(svc.Timestamp, 0).Before(expired) {
-			log.Info().Str("uuid", uuid).Msg("evicting expired service")
+			log.Info().Msgf("expired service evicted: %s", uuid)
 			delete(ds.services, uuid)
 		}
 	}
 }
 
 func (ds *DiscoveryServer) StartEvictionProcess(ctx context.Context) {
-	log.Info().Msg("starting service eviction process every 30s")
-
-	t := time.NewTicker(30 * time.Second)
+	t := time.NewTicker(60 * time.Second)
 	for {
 		select {
 		case <-t.C:
+			log.Info().Msg("starting service eviction process")
 			ds.EvictExpiredServices()
 		case <-ctx.Done():
 			return
@@ -68,13 +69,16 @@ func (ds *DiscoveryServer) RegisterService(_ context.Context, req *pbv1.Register
 		return nil, status.Errorf(codes.InvalidArgument, MsgMissingRequiredField, "service")
 	}
 
-	if svc.GetUuid() == "" {
+	uuid := svc.GetUuid()
+	if uuid == "" {
 		return nil, status.Errorf(codes.InvalidArgument, MsgMissingRequiredField, "uuid")
 	}
 
 	ds.mtx.Lock()
-	ds.services[svc.GetUuid()] = svc
+	ds.services[uuid] = svc
 	ds.mtx.Unlock()
+
+	log.Info().Msgf("service registered: %s", uuid)
 
 	return &pbv1.RegisterServiceResponse{
 		Service: svc,
@@ -83,12 +87,19 @@ func (ds *DiscoveryServer) RegisterService(_ context.Context, req *pbv1.Register
 
 // RegisterService deletes a service from the DiscoveryServer.
 func (ds *DiscoveryServer) DeregisterService(_ context.Context, req *pbv1.DeregisterServiceRequest) (*pbv1.DeregisterServiceResponse, error) {
+	uuid := req.GetUuid()
+	if uuid == "" {
+		return nil, status.Errorf(codes.InvalidArgument, MsgMissingRequiredField, "uuid")
+	}
+
 	ds.mtx.Lock()
-	delete(ds.services, req.GetUuid())
+	delete(ds.services, uuid)
 	ds.mtx.Unlock()
 
+	log.Info().Msgf("service deregistered: %s", uuid)
+
 	return &pbv1.DeregisterServiceResponse{
-		Uuid: req.GetUuid(),
+		Uuid: uuid,
 	}, nil
 }
 
@@ -102,7 +113,6 @@ func (ds *DiscoveryServer) GetService(_ context.Context, req *pbv1.GetServiceReq
 	defer ds.mtx.RUnlock()
 
 	var services []*pbv1.Service
-
 	for uuid, svc := range ds.services {
 		if strings.HasPrefix(uuid, req.GetName()) {
 			services = append(services, svc)

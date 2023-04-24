@@ -5,16 +5,15 @@ import (
 	"time"
 )
 
-// String retrieves a config value as a string, or returns zero value
-// if it cannot be converted.
+// String attempts to retrieve a config value as a string, or returns a zero value.
 func (c *Config) String(key string) string {
 	value := c.Get(key)
 
 	return stringValue(value)
 }
 
-// StringSlice retrieves a config value as a slice of string, or returns an
-// empty slice (not nil) if it cannot converted.
+// StringSlice attempts to retrieve a config value as a slice of strings, or returns an
+// empty slice.
 func (c *Config) StringSlice(key string) []string {
 	value := c.Get(key)
 
@@ -25,26 +24,19 @@ func (c *Config) StringSlice(key string) []string {
 		return stringSliceValues(t)
 	}
 
-	return nil
+	return []string{}
 }
 
-// Int retrieves a config value as an int, or returns zero value
-// if it cannot be converted to an int.
+// Int attempts to retrieve a config value as an int, or returns a zero value.
 func (c *Config) Int(key string) int {
 	value := c.Get(key)
 
 	switch t := value.(type) {
 	case int:
 		return t
-	case uint:
-		return int(t)
 	case int32:
 		return int(t)
-	case uint32:
-		return int(t)
 	case int64:
-		return int(t)
-	case uint64:
 		return int(t)
 	case string:
 		val, err := strconv.Atoi(t)
@@ -56,8 +48,28 @@ func (c *Config) Int(key string) int {
 	return 0
 }
 
-// Float64 retrieves a config value as a float64, or returns zero value
-// if it cannot be converted.
+// Uint attempts to retrieve a config value as a uint, or returns a zero value.
+func (c *Config) Uint(key string) uint {
+	value := c.Get(key)
+
+	switch t := value.(type) {
+	case uint:
+		return uint(t)
+	case uint32:
+		return uint(t)
+	case uint64:
+		return uint(t)
+	case string:
+		val, err := strconv.Atoi(t)
+		if err == nil {
+			return uint(val)
+		}
+	}
+
+	return 0
+}
+
+// Float64 attempts to retrieve a config value as a float64, or returns a zero value.
 func (c *Config) Float64(key string) float64 {
 	value := c.Get(key)
 
@@ -92,8 +104,7 @@ func (c *Config) Bool(key string) bool {
 	return false
 }
 
-// Duration parses a config value as a Duration, or returns zero value if it
-// cannot be converted to a Duration.
+// Duration attempts to parse a config value as a Duration, or returns a zero value.
 func (c *Config) Duration(key string) time.Duration {
 	value := c.Get(key)
 

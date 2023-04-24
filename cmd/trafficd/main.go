@@ -35,7 +35,7 @@ func run(s *service.Service) error {
 
 	go func() {
 		// TODO: don't hard code address.
-		conn, err := grpc.Dial("eventd:8003", grpc.WithTransportCredentials(creds))
+		conn, err := grpc.Dial("eventd:8004", grpc.WithTransportCredentials(creds))
 		if err != nil {
 			log.Error().Err(err).Msg("error dialing eventd")
 			// TODO: s.Exit() or continually check for conn.
