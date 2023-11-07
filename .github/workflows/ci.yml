@@ -39,4 +39,4 @@ jobs:
 
     - run: make proto/install
     - run: make proto/build
-    - run: git diff --exit-code ./pkg/pb
+    - run: git diff --exit-code ./internal/api
