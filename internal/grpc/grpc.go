@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 
-	"github.com/loshz/platform/pkg/metrics"
+	"github.com/loshz/platform/internal/metrics"
 )
 
 var now = time.Now

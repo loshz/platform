@@ -6,10 +6,10 @@ import (
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 
-	"github.com/loshz/platform/pkg/config"
-	pgrpc "github.com/loshz/platform/pkg/grpc"
-	pbv1 "github.com/loshz/platform/pkg/pb/v1"
-	"github.com/loshz/platform/pkg/service"
+	"github.com/loshz/platform/internal/config"
+	pgrpc "github.com/loshz/platform/internal/grpc"
+	pbv1 "github.com/loshz/platform/internal/api/v1"
+	"github.com/loshz/platform/internal/service"
 )
 
 func main() {

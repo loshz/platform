@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/loshz/platform/pkg/config"
+	"github.com/loshz/platform/internal/config"
 )
 
 func TestStart(t *testing.T) {

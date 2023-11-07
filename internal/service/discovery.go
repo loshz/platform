@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 
-	"github.com/loshz/platform/pkg/config"
-	pgrpc "github.com/loshz/platform/pkg/grpc"
-	pbv1 "github.com/loshz/platform/pkg/pb/v1"
+	"github.com/loshz/platform/internal/config"
+	pgrpc "github.com/loshz/platform/internal/grpc"
+	pbv1 "github.com/loshz/platform/internal/api/v1"
 )
 
 // RegisterDiscovery attempts to periodically register a service with the discovery service.

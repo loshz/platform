@@ -11,7 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 
-	"github.com/loshz/platform/pkg/config"
+	"github.com/loshz/platform/internal/config"
 )
 
 // serveHTTP configures and starts the local webserver.

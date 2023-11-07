@@ -1,6 +1,6 @@
 package service
 
-import "github.com/loshz/platform/pkg/config"
+import "github.com/loshz/platform/internal/config"
 
 // LoadRequiredConfig is a helper function for loading config required by
 // a service.

@@ -24,7 +24,7 @@ docker/compose:
 go/build: ./cmd/*
 	@for CMD in $^; do \
 		CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOBIN=$(BIN_DIR) go install \
-		  --ldflags="-X github.com/loshz/platform/pkg/version.Build=$(BUILD_NUMBER)" ./$${CMD}; \
+		  --ldflags="-X github.com/loshz/platform/internal/version.Build=$(BUILD_NUMBER)" ./$${CMD}; \
 	done
 
 go/lint:
@@ -34,8 +34,8 @@ go/test:
 	@go test $(GO_TEST_FLAGS) ./...
 
 proto/install:
-	@go install github.com/bufbuild/buf/cmd/buf@v1.17.0
-	@go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.30
+	@go install github.com/bufbuild/buf/cmd/buf@v1.27.0
+	@go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3
 
 proto/check:
@@ -43,8 +43,8 @@ proto/check:
 	@buf lint
 
 proto/build: proto/check
-	@protoc --go_out=pkg/pb/v1 --go_opt=module=github.com/loshz/platform/pkg/pb/v1 \
-		--go-grpc_out=pkg/pb/v1 --go-grpc_opt=module=github.com/loshz/platform/pkg/pb/v1 \
+	@protoc --go_out=internal/api/v1 --go_opt=module=github.com/loshz/platform/internal/api/v1 \
+		--go-grpc_out=internal/api/v1 --go-grpc_opt=module=github.com/loshz/platform/internal/api/v1 \
 		./proto/v1/*.proto
 
 tls/ca:

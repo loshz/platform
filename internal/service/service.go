@@ -14,10 +14,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
-	"github.com/loshz/platform/pkg/config"
-	plog "github.com/loshz/platform/pkg/log"
-	"github.com/loshz/platform/pkg/metrics"
-	"github.com/loshz/platform/pkg/version"
+	"github.com/loshz/platform/internal/config"
+	plog "github.com/loshz/platform/internal/log"
+	"github.com/loshz/platform/internal/metrics"
+	"github.com/loshz/platform/internal/version"
 )
 
 const (

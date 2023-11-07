@@ -5,7 +5,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	pbv1 "github.com/loshz/platform/pkg/pb/v1"
+	pbv1 "github.com/loshz/platform/internal/api/v1"
 )
 
 type grpcServer struct {

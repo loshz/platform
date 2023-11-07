@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pbv1 "github.com/loshz/platform/pkg/pb/v1"
+	pbv1 "github.com/loshz/platform/internal/api/v1"
 )
 
 func TestEvictExpiredServices(t *testing.T) {
