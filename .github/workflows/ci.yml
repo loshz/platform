@@ -33,9 +33,9 @@ jobs:
 
     - name: Install protoc
       run: |
-        curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v21.12/protoc-21.12-linux-x86_64.zip
-        sudo unzip -o protoc-21.12-linux-x86_64.zip -d /usr/local bin/protoc
-        sudo unzip -o protoc-21.12-linux-x86_64.zip -d /usr/local 'include/*'
+        curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v25.0/protoc-25.0-linux-x86_64.zip
+        sudo unzip -o protoc-25.0-linux-x86_64.zip -d /usr/local bin/protoc
+        sudo unzip -o protoc-25.0-linux-x86_64.zip -d /usr/local 'include/*'
 
     - run: make proto/install
     - run: make proto/build
