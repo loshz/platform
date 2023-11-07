@@ -10,17 +10,17 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pbv1 "github.com/loshz/platform/internal/api/v1"
+	apiv1 "github.com/loshz/platform/internal/api/v1"
 )
 
 // MsgMissingRequiredField represents an error message format for
 // missing request fields.
 var MsgMissingRequiredField = "error: missing required '%s' field"
 
-type Services map[string]*pbv1.Service
+type Services map[string]*apiv1.Service
 
 type DiscoveryServer struct {
-	pbv1.UnimplementedDiscoveryServiceServer
+	apiv1.UnimplementedDiscoveryServiceServer
 
 	mtx      sync.RWMutex
 	services Services
@@ -63,7 +63,7 @@ func (ds *DiscoveryServer) StartEvictionProcess(ctx context.Context) {
 }
 
 // RegisterService validates service data and stores it in the DiscoveryServer.
-func (ds *DiscoveryServer) RegisterService(_ context.Context, req *pbv1.RegisterServiceRequest) (*pbv1.RegisterServiceResponse, error) {
+func (ds *DiscoveryServer) RegisterService(_ context.Context, req *apiv1.RegisterServiceRequest) (*apiv1.RegisterServiceResponse, error) {
 	svc := req.GetService()
 	if svc == nil {
 		return nil, status.Errorf(codes.InvalidArgument, MsgMissingRequiredField, "service")
@@ -80,13 +80,13 @@ func (ds *DiscoveryServer) RegisterService(_ context.Context, req *pbv1.Register
 
 	log.Info().Msgf("service registered: %s", uuid)
 
-	return &pbv1.RegisterServiceResponse{
+	return &apiv1.RegisterServiceResponse{
 		Service: svc,
 	}, nil
 }
 
 // RegisterService deletes a service from the DiscoveryServer.
-func (ds *DiscoveryServer) DeregisterService(_ context.Context, req *pbv1.DeregisterServiceRequest) (*pbv1.DeregisterServiceResponse, error) {
+func (ds *DiscoveryServer) DeregisterService(_ context.Context, req *apiv1.DeregisterServiceRequest) (*apiv1.DeregisterServiceResponse, error) {
 	uuid := req.GetUuid()
 	if uuid == "" {
 		return nil, status.Errorf(codes.InvalidArgument, MsgMissingRequiredField, "uuid")
@@ -98,13 +98,13 @@ func (ds *DiscoveryServer) DeregisterService(_ context.Context, req *pbv1.Deregi
 
 	log.Info().Msgf("service deregistered: %s", uuid)
 
-	return &pbv1.DeregisterServiceResponse{
+	return &apiv1.DeregisterServiceResponse{
 		Uuid: uuid,
 	}, nil
 }
 
 // GetService returns all currently registered services with a given prefix.
-func (ds *DiscoveryServer) GetService(_ context.Context, req *pbv1.GetServiceRequest) (*pbv1.GetServiceResponse, error) {
+func (ds *DiscoveryServer) GetService(_ context.Context, req *apiv1.GetServiceRequest) (*apiv1.GetServiceResponse, error) {
 	if req.GetName() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, MsgMissingRequiredField, "name")
 	}
@@ -112,14 +112,14 @@ func (ds *DiscoveryServer) GetService(_ context.Context, req *pbv1.GetServiceReq
 	ds.mtx.RLock()
 	defer ds.mtx.RUnlock()
 
-	var services []*pbv1.Service
+	var services []*apiv1.Service
 	for uuid, svc := range ds.services {
 		if strings.HasPrefix(uuid, req.GetName()) {
 			services = append(services, svc)
 		}
 	}
 
-	return &pbv1.GetServiceResponse{
+	return &apiv1.GetServiceResponse{
 		Services: services,
 	}, nil
 }

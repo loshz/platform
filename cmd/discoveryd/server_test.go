@@ -10,20 +10,20 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pbv1 "github.com/loshz/platform/internal/api/v1"
+	apiv1 "github.com/loshz/platform/internal/api/v1"
 )
 
 func TestEvictExpiredServices(t *testing.T) {
 	server := NewDiscoveryServer()
 
 	// Manually register services with the server.
-	server.services["expired-service-a"] = &pbv1.Service{
+	server.services["expired-service-a"] = &apiv1.Service{
 		Timestamp: time.Now().Add(-1 * time.Hour).Unix(),
 	}
-	server.services["expired-service-b"] = &pbv1.Service{
+	server.services["expired-service-b"] = &apiv1.Service{
 		Timestamp: time.Now().Add(-1 * time.Hour).Unix(),
 	}
-	server.services["service-a"] = &pbv1.Service{
+	server.services["service-a"] = &apiv1.Service{
 		Timestamp: time.Now().Unix(),
 	}
 
@@ -41,7 +41,7 @@ func TestRegisterService(t *testing.T) {
 
 	t.Run("TestNilService", func(t *testing.T) {
 		// Create an empty request and attempt service registration.
-		req := &pbv1.RegisterServiceRequest{}
+		req := &apiv1.RegisterServiceRequest{}
 		_, err := server.RegisterService(context.TODO(), req)
 
 		// Get the error status.
@@ -55,8 +55,8 @@ func TestRegisterService(t *testing.T) {
 
 	t.Run("TestNilUuid", func(t *testing.T) {
 		// Create a request with an empty uuid and attempt service registration.
-		req := &pbv1.RegisterServiceRequest{
-			Service: &pbv1.Service{
+		req := &apiv1.RegisterServiceRequest{
+			Service: &apiv1.Service{
 				Uuid: "",
 			},
 		}
@@ -73,13 +73,13 @@ func TestRegisterService(t *testing.T) {
 
 	t.Run("TestSuccess", func(t *testing.T) {
 		// Create a valid request and attempt service registration.
-		svc := &pbv1.Service{
+		svc := &apiv1.Service{
 			Uuid:      "test-service",
 			HttpPort:  8001,
 			GrpcPort:  8002,
 			Timestamp: time.Now().Unix(),
 		}
-		req := &pbv1.RegisterServiceRequest{
+		req := &apiv1.RegisterServiceRequest{
 			Service: svc,
 		}
 		res, err := server.RegisterService(context.TODO(), req)
@@ -99,7 +99,7 @@ func TestDeregisterService(t *testing.T) {
 
 	t.Run("TestNilUuid", func(t *testing.T) {
 		// Create a request with an empty uuid and attempt service deregistration.
-		req := &pbv1.DeregisterServiceRequest{
+		req := &apiv1.DeregisterServiceRequest{
 			Uuid: "",
 		}
 		_, err := server.DeregisterService(context.TODO(), req)
@@ -116,8 +116,8 @@ func TestDeregisterService(t *testing.T) {
 	t.Run("TestSuccess", func(t *testing.T) {
 		// Create a valid service and manually register with server.
 		uuid := "test-service"
-		server.services[uuid] = &pbv1.Service{}
-		req := &pbv1.DeregisterServiceRequest{
+		server.services[uuid] = &apiv1.Service{}
+		req := &apiv1.DeregisterServiceRequest{
 			Uuid: uuid,
 		}
 		res, err := server.DeregisterService(context.TODO(), req)
@@ -137,7 +137,7 @@ func TestGetService(t *testing.T) {
 
 	t.Run("TestNilName", func(t *testing.T) {
 		// Create a request with an empty name and attempt to get services.
-		req := &pbv1.GetServiceRequest{
+		req := &apiv1.GetServiceRequest{
 			Name: "",
 		}
 		_, err := server.GetService(context.TODO(), req)
@@ -153,12 +153,12 @@ func TestGetService(t *testing.T) {
 
 	t.Run("TestSuccess", func(t *testing.T) {
 		// Manually register services with the server.
-		server.services["test-service-a"] = &pbv1.Service{}
-		server.services["test-service-b"] = &pbv1.Service{}
-		server.services["service-a"] = &pbv1.Service{}
+		server.services["test-service-a"] = &apiv1.Service{}
+		server.services["test-service-b"] = &apiv1.Service{}
+		server.services["service-a"] = &apiv1.Service{}
 
 		// Create a valid service and manually register with server.
-		req := &pbv1.GetServiceRequest{
+		req := &apiv1.GetServiceRequest{
 			Name: "test-service",
 		}
 		res, err := server.GetService(context.TODO(), req)

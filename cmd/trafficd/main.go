@@ -8,9 +8,9 @@ import (
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 
+	apiv1 "github.com/loshz/platform/internal/api/v1"
 	"github.com/loshz/platform/internal/config"
 	pgrpc "github.com/loshz/platform/internal/grpc"
-	pbv1 "github.com/loshz/platform/internal/api/v1"
 	"github.com/loshz/platform/internal/service"
 )
 
@@ -41,13 +41,13 @@ func run(s *service.Service) error {
 			// TODO: s.Exit() or continually check for conn.
 		}
 		defer conn.Close()
-		client := pbv1.NewEventServiceClient(conn)
+		client := apiv1.NewEventServiceClient(conn)
 
 		t := time.NewTicker(10 * time.Second)
 		for {
 			select {
 			case <-t.C:
-				res, err := client.Event(context.Background(), &pbv1.EventRequest{Hostname: "blah"})
+				res, err := client.Event(context.Background(), &apiv1.EventRequest{Hostname: "blah"})
 				if err != nil {
 					log.Error().Err(err).Msg("error making request to eventd")
 					continue

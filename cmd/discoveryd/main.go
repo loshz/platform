@@ -6,9 +6,9 @@ import (
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 
+	apiv1 "github.com/loshz/platform/internal/api/v1"
 	"github.com/loshz/platform/internal/config"
 	pgrpc "github.com/loshz/platform/internal/grpc"
-	pbv1 "github.com/loshz/platform/internal/api/v1"
 	"github.com/loshz/platform/internal/service"
 )
 
@@ -47,7 +47,7 @@ func run(s *service.Service) error {
 
 	// Create a gRPC server and register the service.
 	srv := pgrpc.NewServer(opts)
-	srv.RegisterService(&pbv1.DiscoveryService_ServiceDesc, ds)
+	srv.RegisterService(&apiv1.DiscoveryService_ServiceDesc, ds)
 
 	// Start the gRPC server in the background.
 	go srv.Serve(s.Ctx(), s.Config.Int(config.KeyGRPCServerPort))

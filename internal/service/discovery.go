@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 
+	apiv1 "github.com/loshz/platform/internal/api/v1"
 	"github.com/loshz/platform/internal/config"
 	pgrpc "github.com/loshz/platform/internal/grpc"
-	pbv1 "github.com/loshz/platform/internal/api/v1"
 )
 
 // RegisterDiscovery attempts to periodically register a service with the discovery service.
@@ -35,14 +35,14 @@ func (s *Service) RegisterDiscovery() {
 		return
 	}
 	defer conn.Close()
-	client := pbv1.NewDiscoveryServiceClient(conn)
+	client := apiv1.NewDiscoveryServiceClient(conn)
 
 	t := time.NewTicker(s.Config.Duration(config.KeyServiceRegisterInt))
 	for {
 		select {
 		case <-t.C:
-			req := &pbv1.RegisterServiceRequest{
-				Service: &pbv1.Service{
+			req := &apiv1.RegisterServiceRequest{
+				Service: &apiv1.Service{
 					Uuid:      s.ID(),
 					HttpPort:  uint32(s.Config.Uint(config.KeyHTTPPort)),
 					GrpcPort:  uint32(s.Config.Uint(config.KeyGRPCServerPort)),
@@ -76,9 +76,9 @@ func (s *Service) DeregisterDiscovery() error {
 		return fmt.Errorf("error dialing discovery service: %w", err)
 	}
 	defer conn.Close()
-	client := pbv1.NewDiscoveryServiceClient(conn)
+	client := apiv1.NewDiscoveryServiceClient(conn)
 
-	req := &pbv1.DeregisterServiceRequest{
+	req := &apiv1.DeregisterServiceRequest{
 		Uuid: s.ID(),
 	}
 	if _, err := client.DeregisterService(context.Background(), req); err != nil {

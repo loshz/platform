@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package proto.v1;
 
-option go_package = "github.com/loshz/platform/internal/api/v1;pbv1";
+option go_package = "github.com/loshz/platform/internal/api/v1;apiv1";
 
 service DiscoveryService {
   rpc RegisterService(RegisterServiceRequest) returns (RegisterServiceResponse) {}

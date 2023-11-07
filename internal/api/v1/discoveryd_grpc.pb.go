@@ -4,7 +4,7 @@
 // - protoc             v4.25.0
 // source: proto/v1/discoveryd.proto
 
-package pbv1
+package apiv1
 
 import (
 	context "context"
