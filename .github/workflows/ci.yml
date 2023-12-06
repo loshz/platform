@@ -21,6 +21,13 @@ jobs:
         skip-cache: true
     - run: make go/test
 
+  docker:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+    - run: make tls
+    - run: make docker/build
+
   proto:
     runs-on: ubuntu-22.04
     steps:
