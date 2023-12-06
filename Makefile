@@ -10,7 +10,7 @@ DOCKER_IMAGE ?= loshz/platform
 # TLS config.
 TLS_CERT_DIR ?= ./config/certs
 
-.PHONY: docker/build docker/compose go/build go/lint go/test proto/install proto/check proto/build tls/ca tls/certs
+.PHONY: docker/build docker/compose go/build go/lint go/test proto/install proto/check proto/build tls tls/ca tls/certs
 
 docker/build:
 	$(DOCKER) build \
@@ -46,6 +46,8 @@ proto/build: proto/check
 	@protoc --go_out=internal/api/v1 --go_opt=module=github.com/loshz/platform/internal/api/v1 \
 		--go-grpc_out=internal/api/v1 --go-grpc_opt=module=github.com/loshz/platform/internal/api/v1 \
 		./proto/v1/*.proto
+
+tls: tls/ca tls/certs
 
 tls/ca:
 	@openssl genpkey -algorithm ED25519 -out $(TLS_CERT_DIR)/ca.key.pem

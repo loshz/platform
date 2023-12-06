@@ -1,9 +1,10 @@
-# Ignore everything
+# Ignore everything by default.
 *
 
-# Allow files and directories
+# Allow only necessary files and directories.
 !cmd/
 !config/certs/
+!internal/
 !pkg/
 !go.mod
 !go.sum

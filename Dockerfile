@@ -1,7 +1,7 @@
 #################
 # Build stage 0 #
 #################
-FROM golang:1.20-alpine3.17
+FROM golang:1.21-alpine3.18
 
 # Install build dependencies
 RUN apk --no-cache add build-base
@@ -18,7 +18,7 @@ RUN BUILD_NUMBER=${BUILD_NUMBER} BIN_DIR=/go/bin/platform make go/build
 #################
 # Build stage 1 #
 #################
-FROM alpine:3.17
+FROM alpine:3.18
 
 ARG USER=platform
 
