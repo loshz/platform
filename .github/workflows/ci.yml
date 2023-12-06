@@ -11,12 +11,10 @@ jobs:
   tests:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-go@v3
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v5
       with:
         go-version-file: 'go.mod'
-
-    # Run unit tests and linters.
     - uses: golangci/golangci-lint-action@v3
       with:
         version: latest
@@ -26,17 +24,16 @@ jobs:
   proto:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-go@v3
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v5
       with:
         go-version-file: 'go.mod'
-
     - name: Install protoc
       run: |
-        curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v25.0/protoc-25.0-linux-x86_64.zip
-        sudo unzip -o protoc-25.0-linux-x86_64.zip -d /usr/local bin/protoc
-        sudo unzip -o protoc-25.0-linux-x86_64.zip -d /usr/local 'include/*'
-
+        curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v25.1/protoc-25.1-linux-x86_64.zip
+        sudo unzip -o protoc-25.1-linux-x86_64.zip -d /usr/local/bin/protoc
+        sudo unzip -o protoc-25.1-linux-x86_64.zip -d /usr/local 'include/*'
     - run: make proto/install
+    - run: make proto/check
     - run: make proto/build
     - run: git diff --exit-code ./internal/api
