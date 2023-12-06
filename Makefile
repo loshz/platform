@@ -47,7 +47,10 @@ proto/build: proto/check
 		--go-grpc_out=internal/api/v1 --go-grpc_opt=module=github.com/loshz/platform/internal/api/v1 \
 		./proto/v1/*.proto
 
-tls: tls/ca tls/certs
+tls:
+	@mkdir $(TLS_CERT_DIR)
+	$(MAKE) tls/ca
+	$(MAKE) tls/certs
 
 tls/ca:
 	@openssl genpkey -algorithm ED25519 -out $(TLS_CERT_DIR)/ca.key.pem
