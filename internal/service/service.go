@@ -21,9 +21,13 @@ import (
 )
 
 const (
-	ExitOk = iota
+	ExitOK = iota
 	ExitError
 )
+
+// RunFunc is a function that will be called by Run to initialize a service.
+// If this function returns an error then the server will immediately shut down.
+type RunFunc func(context.Context, *Service) error
 
 // Service represents a platform application.
 type Service struct {
@@ -34,11 +38,6 @@ type Service struct {
 	// E.g., service-xxxx-xxxx
 	id string
 
-	// Global context used to signal service shutdown to spawned
-	// goroutines.
-	ctx       context.Context
-	ctxCancel context.CancelFunc
-
 	// Channel for sending/receiving internal service errors.
 	errCh chan error
 
@@ -48,33 +47,25 @@ type Service struct {
 
 // New creates a named Service with configurable dependencies.
 func New(name string) *Service {
-	// Configure context for service shutdown signals.
-	ctx, cancel := context.WithCancel(context.Background())
-
 	return &Service{
-		Config:    config.New(),
-		id:        fmt.Sprintf("%s-%s", name, uuid.New()),
-		ctx:       ctx,
-		ctxCancel: cancel,
-		errCh:     make(chan error),
+		Config: config.New(),
+		id:     fmt.Sprintf("%s-%s", strings.ToLower(name), uuid.New()),
+		errCh:  make(chan error),
 	}
 }
 
 // Service getter methods.
-func (s *Service) Ctx() context.Context { return s.ctx }
-func (s *Service) ID() string           { return s.id }
-func (s *Service) IsLeader() bool       { return s.leader.Load() }
-func (s *Service) Name() string         { return strings.SplitN(s.ID(), "-", 2)[0] }
-
-// RunFunc is a function that will be called by Run to initialize a service.
-// If this function returns an error then the server will immediately shut down.
-type RunFunc func(*Service) error
+func (s *Service) ID() string     { return s.id }
+func (s *Service) IsLeader() bool { return s.leader.Load() }
+func (s *Service) Name() string   { return strings.SplitN(s.ID(), "-", 2)[0] }
 
 // Run starts the Service and ensures all dependencies are initialised.
 //
 // By default, it will start the local web server and wait for a stop
 // signal to be received before attempting to gracefully shutdown.
 func (s *Service) Run(run RunFunc) {
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+
 	// Initialize required service config.
 	s.LoadRequiredConfig()
 
@@ -82,46 +73,33 @@ func (s *Service) Run(run RunFunc) {
 	plog.ConfigureGlobalLogging(s.Config.String(config.KeyServiceLogLevel), s.ID(), version.Build)
 
 	// Attempt to start the service.
-	if err := s.start(run); err != nil {
+	if err := s.start(ctx, run); err != nil {
 		log.Error().Err(err).Msg("service startup error")
+		cancel()
 		s.Exit(ExitError)
 	}
 
+	// Register service for discovery.
+	go s.RegisterDiscovery(ctx)
+
 	// Start the local http server.
-	go s.serveHTTP()
+	go s.serveHTTP(ctx)
 
 	// Wait for an exit signal or service error.
-	status := s.waitSignal()
+	status := s.waitSignal(ctx)
+	cancel()
 
 	// Attempt to gracefully shutdown.
 	s.Exit(status)
 }
 
-// waitSignal blocks waiting for operating system signals or an internal
-// service error.
-func (s *Service) waitSignal() int {
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
-
-	// Wait for signal to be received.
-	select {
-	case <-stop:
-		log.Info().Msg("stop signal received, starting shut down")
-	case err := <-s.errCh:
-		// Always return an error as nothing should be sending nil
-		// to this channel.
-		log.Error().Err(err).Msg("internal service error")
-		return ExitError
-	}
-
-	return ExitOk
-}
+// SignalError send a given error to the Service's error channel so it can be handled gracefully.
+// Services should prefer calling this method instead of manually calling s.Exit()
+func (s *Service) SignalError(err error) { s.errCh <- err }
 
 // Exit cancels the service's context in order to signal a shutdown to child processes.
 // It sleeps for a configurable time before signalling the process to exit.
 func (s *Service) Exit(status int) {
-	s.ctxCancel()
-
 	// Force exit after deadline.
 	time.AfterFunc(s.Config.Duration(config.KeyServiceShutdownTimeout), func() {
 		log.Error().Msg("service shutdown timeout expired")
@@ -135,26 +113,39 @@ func (s *Service) Exit(status int) {
 	os.Exit(status)
 }
 
+// waitSignal blocks waiting for operating system signals or an internal
+// service error.
+func (s *Service) waitSignal(ctx context.Context) int {
+	// Wait for signal to be received.
+	select {
+	case <-ctx.Done():
+		log.Info().Msg("stop signal received, starting shut down")
+	case err := <-s.errCh:
+		// Always return an error as nothing should be sending nil
+		// to this channel.
+		log.Error().Err(err).Msg("internal service error")
+		return ExitError
+	}
+
+	return ExitOK
+}
+
 // start attempts to run the service with an initial timeout.
 // If the deadline exceeds the time taken to run the service, it is treated
 // as a failed start.
-func (s *Service) start(run RunFunc) error {
+func (s *Service) start(ctx context.Context, run RunFunc) error {
 	// Configure startup timeout.
 	timeout := s.Config.Duration(config.KeyServiceStartupTimeout)
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
 
 	// Attempt to run the main service func and record error.
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- run(s)
+		errCh <- run(ctx, s)
 	}()
 
 	select {
-	case <-ctx.Done():
-		if ctx.Err() == context.DeadlineExceeded {
-			return fmt.Errorf("startup deadline (%s) exceeded", timeout)
-		}
+	case <-time.After(timeout):
+		return fmt.Errorf("startup deadline (%s) exceeded", timeout)
 	case err := <-errCh:
 		if err != nil {
 			return fmt.Errorf("error running service: %w", err)

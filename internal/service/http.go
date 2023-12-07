@@ -17,7 +17,7 @@ import (
 // serveHTTP configures and starts the local webserver.
 //
 // By default, it will register pprof, metrics and health endpoints.
-func (s *Service) serveHTTP() {
+func (s *Service) serveHTTP(ctx context.Context) {
 	port := fmt.Sprintf(":%d", s.Config.Int(config.KeyHTTPPort))
 	router := http.NewServeMux()
 
@@ -54,13 +54,13 @@ func (s *Service) serveHTTP() {
 	go func() {
 		log.Info().Msgf("local http server running on %s", port)
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			s.errCh <- fmt.Errorf("local http server error: %w", err)
+			s.SignalError(fmt.Errorf("local http server error: %w", err))
 			return
 		}
 	}()
 
 	// Wait for service to exit and shutdown.
-	<-s.ctx.Done()
+	<-ctx.Done()
 	log.Info().Msg("stopping http server")
 	_ = srv.Shutdown(context.Background())
 }

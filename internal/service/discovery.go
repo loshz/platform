@@ -16,7 +16,7 @@ import (
 )
 
 // RegisterDiscovery attempts to periodically register a service with the discovery service.
-func (s *Service) RegisterDiscovery() {
+func (s *Service) RegisterDiscovery(ctx context.Context) {
 	s.LoadDiscoveryConfig()
 
 	// Load TLS credentials.
@@ -25,13 +25,13 @@ func (s *Service) RegisterDiscovery() {
 	key := s.Config.String(config.KeyGRPCClientKey)
 	creds, err := pgrpc.NewClientTransportCreds(ca, cert, key)
 	if err != nil {
-		s.errCh <- fmt.Errorf("error loading grpc tls credentials: %w", err)
+		s.SignalError(fmt.Errorf("error loading grpc tls credentials: %w", err))
 		return
 	}
 
 	conn, err := grpc.Dial(s.Config.String(config.KeyServiceDiscoveryAddr), grpc.WithTransportCredentials(creds))
 	if err != nil {
-		s.errCh <- fmt.Errorf("error dialing discovery service: %w", err)
+		s.SignalError(fmt.Errorf("error dialing discovery service: %w", err))
 		return
 	}
 	defer conn.Close()
@@ -54,7 +54,7 @@ func (s *Service) RegisterDiscovery() {
 				log.Error().Err(errors.New(stat.Message())).Str("code", stat.Code().String()).Msg("error registering service for discovery")
 				continue
 			}
-		case <-s.Ctx().Done():
+		case <-ctx.Done():
 			return
 		}
 	}

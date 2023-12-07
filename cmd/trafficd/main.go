@@ -23,7 +23,7 @@ func main() {
 	s.Run(run)
 }
 
-func run(s *service.Service) error {
+func run(ctx context.Context, s *service.Service) error {
 	// Load TLS credentials.
 	ca := s.Config.String(config.KeyGRPCTLSCA)
 	cert := s.Config.String(config.KeyGRPCClientCert)
@@ -54,7 +54,7 @@ func run(s *service.Service) error {
 				}
 
 				log.Info().Msgf("eventd response: %s", res.Uuid)
-			case <-s.Ctx().Done():
+			case <-ctx.Done():
 				conn.Close()
 				return
 			}

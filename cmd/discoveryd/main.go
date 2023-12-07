@@ -1,9 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 
 	apiv1 "github.com/loshz/platform/internal/api/v1"
@@ -21,7 +21,7 @@ func main() {
 	s.Run(run)
 }
 
-func run(s *service.Service) error {
+func run(ctx context.Context, s *service.Service) error {
 	// Load TLS credentials.
 	ca := s.Config.String(config.KeyGRPCTLSCA)
 	cert := s.Config.String(config.KeyGRPCServerCert)
@@ -43,22 +43,14 @@ func run(s *service.Service) error {
 
 	// Create a discovery server and start the service eviction process in the background.
 	ds := NewDiscoveryServer()
-	go ds.StartEvictionProcess(s.Ctx())
+	go ds.StartEvictionProcess(ctx)
 
 	// Create a gRPC server and register the service.
-	srv := pgrpc.NewServer(opts)
-	srv.RegisterService(&apiv1.DiscoveryService_ServiceDesc, ds)
+	grpcSrv := pgrpc.NewServer(opts)
+	grpcSrv.RegisterService(&apiv1.DiscoveryService_ServiceDesc, ds)
 
 	// Start the gRPC server in the background.
-	go srv.Serve(s.Ctx(), s.Config.Int(config.KeyGRPCServerPort))
-
-	// Listen for gRPC server errors and exit if received.
-	go func() {
-		if err := <-srv.Error(); err != nil {
-			log.Error().Err(err).Msg("grpc server error")
-			s.Exit(service.ExitError)
-		}
-	}()
+	go s.ServeGRPC(ctx, grpcSrv)
 
 	return nil
 }

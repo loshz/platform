@@ -48,7 +48,7 @@ func NewCertPool(ca string) (*x509.CertPool, error) {
 func NewServerTransportCreds(ca, crt, key string) (credentials.TransportCredentials, error) {
 	capool, err := NewCertPool(ca)
 	if err != nil {
-		return nil, fmt.Errorf("error loading ca cert pool : %w", err)
+		return nil, fmt.Errorf("error loading ca cert pool: %w", err)
 	}
 
 	tlsConfig, err := NewTLSConfig(crt, key)
