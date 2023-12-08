@@ -41,6 +41,6 @@ jobs:
         sudo unzip -o protoc-25.1-linux-x86_64.zip -d /usr/local bin/protoc
         sudo unzip -o protoc-25.1-linux-x86_64.zip -d /usr/local 'include/*'
     - run: make proto/install
-    - run: make proto/check
+    - run: make proto/lint
     - run: make proto/build
     - run: git diff --exit-code ./internal/api

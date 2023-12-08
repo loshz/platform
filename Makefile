@@ -1,6 +1,8 @@
 # Build config.
 BUILD_NUMBER ?= dev
 BIN_DIR ?= ${CURDIR}/bin
+GOARCH ?= amd64
+GOOS ?= linux
 GO_TEST_FLAGS ?= -failfast -race
 
 # Docker config.
@@ -23,7 +25,7 @@ docker/compose:
 
 go/build: ./cmd/*
 	@for CMD in $^; do \
-		CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOBIN=$(BIN_DIR) go install \
+		CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) GOBIN=$(BIN_DIR) go install \
 		  --ldflags="-X github.com/loshz/platform/internal/version.Build=$(BUILD_NUMBER)" ./$${CMD}; \
 	done
 
@@ -38,7 +40,7 @@ proto/install:
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31.0
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
 
-proto/check:
+proto/lint:
 	@buf format --diff --exit-code
 	@buf lint
 
