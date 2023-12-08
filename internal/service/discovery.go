@@ -19,6 +19,11 @@ import (
 func (s *Service) RegisterDiscovery(ctx context.Context) {
 	s.LoadDiscoveryConfig()
 
+	// Return early if discovery not enabled.
+	if !s.Config.Bool(config.KeyServiceDiscoveryEnabled) {
+		return
+	}
+
 	// Load TLS credentials.
 	ca := s.Config.String(config.KeyGRPCTLSCA)
 	cert := s.Config.String(config.KeyGRPCClientCert)
@@ -62,6 +67,11 @@ func (s *Service) RegisterDiscovery(ctx context.Context) {
 
 // DeregisterDiscovery attempts to deregister a service with the discovery service.
 func (s *Service) DeregisterDiscovery() error {
+	// Return early if discovery not enabled.
+	if !s.Config.Bool(config.KeyServiceDiscoveryEnabled) {
+		return nil
+	}
+
 	// Load TLS credentials.
 	ca := s.Config.String(config.KeyGRPCTLSCA)
 	cert := s.Config.String(config.KeyGRPCClientCert)

@@ -76,14 +76,14 @@ func (c *Config) MustLoad(key string, value interface{}, fns ...ParseFunc) {
 }
 
 // normalizeKey transforms a config key into a prefixed env var.
-// For example: log.level becomes PLATFORM_LOG_LEVEL
+// For example: log.level becomes PLAT_LOG_LEVEL
 func normalizeKey(key string) string {
 	// Remove whiitespace.
 	key = strings.ReplaceAll(key, " ", "")
 	// Transform key to env var.
 	key = strings.Replace(key, ".", "_", -1)
 	// Add prefix to key.
-	key = strings.ToUpper(fmt.Sprintf("PLATFORM_%s", key))
+	key = strings.ToUpper(fmt.Sprintf("PLAT_%s", key))
 
 	return key
 }

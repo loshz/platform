@@ -8,7 +8,7 @@ import (
 )
 
 func TestLoad(t *testing.T) {
-	t.Setenv("PLATFORM_SOME_KEY", "value")
+	t.Setenv("PLAT_SOME_KEY", "value")
 
 	c := New()
 
@@ -42,8 +42,8 @@ func TestSetGet(t *testing.T) {
 
 func TestNormalizeKey(t *testing.T) {
 	key := normalizeKey("some.key")
-	assert.Equal(t, key, "PLATFORM_SOME_KEY")
+	assert.Equal(t, key, "PLAT_SOME_KEY")
 
 	key = normalizeKey(" some. key ")
-	assert.Equal(t, key, "PLATFORM_SOME_KEY")
+	assert.Equal(t, key, "PLAT_SOME_KEY")
 }
