@@ -38,11 +38,11 @@ func (ds *DiscoveryServer) EvictExpiredServices() {
 	ds.mtx.Lock()
 	defer ds.mtx.Unlock()
 
-	// Loop through all all services and check if the current timestamp is
+	// Loop through all services and check if the current timestamp is
 	// after the expiry threshold.
 	for uuid, svc := range ds.services {
 		expired := time.Now().Add(-5 * time.Minute)
-		if time.Unix(svc.Timestamp, 0).Before(expired) {
+		if time.Unix(svc.LastSeen, 0).Before(expired) {
 			log.Info().Msgf("expired service evicted: %s", uuid)
 			delete(ds.services, uuid)
 		}

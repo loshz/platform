@@ -18,13 +18,13 @@ func TestEvictExpiredServices(t *testing.T) {
 
 	// Manually register services with the server.
 	server.services["expired-service-a"] = &apiv1.Service{
-		Timestamp: time.Now().Add(-1 * time.Hour).Unix(),
+		LastSeen: time.Now().Add(-1 * time.Hour).Unix(),
 	}
 	server.services["expired-service-b"] = &apiv1.Service{
-		Timestamp: time.Now().Add(-1 * time.Hour).Unix(),
+		LastSeen: time.Now().Add(-1 * time.Hour).Unix(),
 	}
 	server.services["service-a"] = &apiv1.Service{
-		Timestamp: time.Now().Unix(),
+		LastSeen: time.Now().Unix(),
 	}
 
 	server.EvictExpiredServices()
@@ -74,10 +74,10 @@ func TestRegisterService(t *testing.T) {
 	t.Run("TestSuccess", func(t *testing.T) {
 		// Create a valid request and attempt service registration.
 		svc := &apiv1.Service{
-			Uuid:      "test-service",
-			HttpPort:  8001,
-			GrpcPort:  8002,
-			Timestamp: time.Now().Unix(),
+			Uuid:     "test-service",
+			HttpPort: 8001,
+			GrpcPort: 8002,
+			LastSeen: time.Now().Unix(),
 		}
 		req := &apiv1.RegisterServiceRequest{
 			Service: svc,

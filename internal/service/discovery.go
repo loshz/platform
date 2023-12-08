@@ -48,10 +48,10 @@ func (s *Service) RegisterDiscovery(ctx context.Context) {
 		case <-t.C:
 			req := &apiv1.RegisterServiceRequest{
 				Service: &apiv1.Service{
-					Uuid:      s.ID(),
-					HttpPort:  uint32(s.Config.Uint(config.KeyHTTPPort)),
-					GrpcPort:  uint32(s.Config.Uint(config.KeyGRPCServerPort)),
-					Timestamp: time.Now().Unix(),
+					Uuid:     s.ID(),
+					HttpPort: uint32(s.Config.Uint(config.KeyHTTPPort)),
+					GrpcPort: uint32(s.Config.Uint(config.KeyGRPCServerPort)),
+					LastSeen: time.Now().Unix(),
 				},
 			}
 			if _, err := client.RegisterService(context.Background(), req); err != nil {
