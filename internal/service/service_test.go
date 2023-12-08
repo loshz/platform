@@ -45,7 +45,7 @@ func TestWaitSignal(t *testing.T) {
 	t.Run("TestError", func(t *testing.T) {
 		// Send an error to the service channel.
 		go func() {
-			svc.SignalError(errors.New("wait error"))
+			svc.Error(errors.New("wait error"))
 		}()
 
 		status := svc.waitSignal(context.Background())

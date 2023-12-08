@@ -30,13 +30,13 @@ func (s *Service) RegisterDiscovery(ctx context.Context) {
 	key := s.Config.String(config.KeyGRPCClientKey)
 	creds, err := pgrpc.NewClientTransportCreds(ca, cert, key)
 	if err != nil {
-		s.SignalError(fmt.Errorf("error loading grpc tls credentials: %w", err))
+		s.Error(fmt.Errorf("error loading grpc tls credentials: %w", err))
 		return
 	}
 
 	conn, err := grpc.Dial(s.Config.String(config.KeyServiceDiscoveryAddr), grpc.WithTransportCredentials(creds))
 	if err != nil {
-		s.SignalError(fmt.Errorf("error dialing discovery service: %w", err))
+		s.Error(fmt.Errorf("error dialing discovery service: %w", err))
 		return
 	}
 	defer conn.Close()

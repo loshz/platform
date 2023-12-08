@@ -14,7 +14,7 @@ func (s *Service) ServeGRPC(ctx context.Context, srv grpc.ServiceServer) {
 	// Start the gRPC server in the background.
 	go func() {
 		if err := srv.Serve(ctx, s.Config.Int(config.KeyGRPCServerPort)); err != nil {
-			s.SignalError(fmt.Errorf("grpc server error: %w", err))
+			s.Error(fmt.Errorf("grpc server error: %w", err))
 		}
 	}()
 

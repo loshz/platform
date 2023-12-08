@@ -93,9 +93,10 @@ func (s *Service) Run(run RunFunc) {
 	s.Exit(status)
 }
 
-// SignalError send a given error to the Service's error channel so it can be handled gracefully.
+// Error sends a given error to the Service's error channel.
 // Services should prefer calling this method instead of manually calling s.Exit()
-func (s *Service) SignalError(err error) { s.errCh <- err }
+// so shutdown can be handled gracefully.
+func (s *Service) Error(err error) { s.errCh <- err }
 
 // Exit cancels the service's context in order to signal a shutdown to child processes.
 // It sleeps for a configurable time before signalling the process to exit.

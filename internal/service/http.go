@@ -54,7 +54,7 @@ func (s *Service) serveHTTP(ctx context.Context) {
 	go func() {
 		log.Info().Msgf("local http server running on %s", port)
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			s.SignalError(fmt.Errorf("local http server error: %w", err))
+			s.Error(fmt.Errorf("local http server error: %w", err))
 			return
 		}
 	}()
