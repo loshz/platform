@@ -4,6 +4,7 @@ BIN_DIR ?= ${CURDIR}/bin
 GOARCH ?= amd64
 GOOS ?= linux
 GO_TEST_FLAGS ?= -failfast -race
+PROTOC_VERSION ?= 25.1
 
 # Docker config.
 DOCKER ?= sudo docker
@@ -36,6 +37,9 @@ go/test:
 	@go test $(GO_TEST_FLAGS) ./...
 
 proto/install:
+	@curl -sL https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOC_VERSION)/protoc-$(PROTOC_VERSION)-linux-x86_64.zip -o /tmp/protoc.zip
+	@sudo unzip -o /tmp/protoc.zip -d /usr/local bin/protoc
+	@sudo unzip -o /tmp/protoc.zip -d /usr/local 'include/*'
 	@go install github.com/bufbuild/buf/cmd/buf@v1.28.1
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.32.0
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
