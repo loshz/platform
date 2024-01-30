@@ -3,9 +3,8 @@
 
 # Allow only necessary files and directories.
 !cmd/
-!config/certs/
+!config/tls/
 !internal/
-!pkg/
 !go.mod
 !go.sum
 !Makefile

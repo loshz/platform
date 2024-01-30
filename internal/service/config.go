@@ -21,17 +21,17 @@ func (s *Service) LoadDiscoveryConfig() {
 // LoadGRPCServerConfig is a helper function for loading required gRPC
 // server config.
 func (s *Service) LoadGRPCServerConfig() {
-	s.Config.MustLoad(config.KeyGRPCTLSCA, "", config.ParseString)
+	s.Config.MustLoad(config.KeyGRPCTLSCA, "/usr/local/share/ca-certificates/ca.crt.pem", config.ParseString)
 	s.Config.MustLoad(config.KeyGRPCServerPort, 8002, config.ParseInt)
-	s.Config.MustLoad(config.KeyGRPCServerCert, "", config.ParseString)
-	s.Config.MustLoad(config.KeyGRPCServerKey, "", config.ParseString)
+	s.Config.MustLoad(config.KeyGRPCServerCert, "/usr/local/share/ca-certificates/server.crt.pem", config.ParseString)
+	s.Config.MustLoad(config.KeyGRPCServerKey, "/usr/local/share/ca-certificates/server.key.pem", config.ParseString)
 	s.Config.MustLoad(config.KeyGRPCServerConnTimeout, "10s", config.ParseDuration)
 }
 
 // LoadGRPCClientConfig is a helper function for loading required gRPC
 // server config.
 func (s *Service) LoadGRPCClientConfig() {
-	s.Config.MustLoad(config.KeyGRPCTLSCA, "", config.ParseString)
-	s.Config.MustLoad(config.KeyGRPCClientCert, "", config.ParseString)
-	s.Config.MustLoad(config.KeyGRPCClientKey, "", config.ParseString)
+	s.Config.MustLoad(config.KeyGRPCTLSCA, "/usr/local/share/ca-certificates/ca.crt.pem", config.ParseString)
+	s.Config.MustLoad(config.KeyGRPCClientCert, "/usr/local/share/ca-certificates/client.crt.pem", config.ParseString)
+	s.Config.MustLoad(config.KeyGRPCClientKey, "/usr/local/share/ca-certificates/client.key.pem", config.ParseString)
 }

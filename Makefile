@@ -11,7 +11,7 @@ DOCKER ?= sudo docker
 DOCKER_IMAGE ?= loshz/platform
 
 # TLS config.
-TLS_CERT_DIR ?= ./config/certs
+TLS_CERT_DIR ?= ./config/tls
 
 .PHONY: docker/build docker/compose go/build go/lint go/test proto/install proto/lint proto/build tls tls/ca tls/certs
 

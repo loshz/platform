@@ -2,7 +2,7 @@ bin/
 vendor/
 
 # TLS
-config/certs/
+config/tls/
 *.crt
 *.key
 *.pem

@@ -26,10 +26,7 @@ services:
     environment:
       PLAT_SERVICE_DISCOVERY_ENABLED: false
       PLAT_HTTP_PORT: 8001
-      PLAT_GRPC_TLS_CA: "/home/platform/certs/ca.crt.pem"
       PLAT_GRPC_SERVER_PORT: 8000
-      PLAT_GRPC_SERVER_CERT: "/home/platform/certs/server.crt.pem"
-      PLAT_GRPC_SERVER_KEY: "/home/platform/certs/server.key.pem"
 
   trafficd:
     build: .
@@ -37,18 +34,10 @@ services:
     environment:
       PLAT_SERVICE_DISCOVERY_ENABLED: false
       PLAT_HTTP_PORT: 8002
-      PLAT_GRPC_TLS_CA: "/home/platform/certs/ca.crt.pem"
-      PLAT_GRPC_CLIENT_CERT: "/home/platform/certs/client.crt.pem"
-      PLAT_GRPC_CLIENT_KEY: "/home/platform/certs/client.key.pem"
 
   eventd:
     build: .
     command: eventd
     environment:
       PLAT_HTTP_PORT: 8003
-      PLAT_GRPC_TLS_CA: "/home/platform/certs/ca.crt.pem"
       PLAT_GRPC_SERVER_PORT: 8004
-      PLAT_GRPC_SERVER_CERT: "/home/platform/certs/server.crt.pem"
-      PLAT_GRPC_SERVER_KEY: "/home/platform/certs/server.key.pem"
-      PLAT_GRPC_CLIENT_CERT: "/home/platform/certs/client.crt.pem"
-      PLAT_GRPC_CLIENT_KEY: "/home/platform/certs/client.key.pem"
