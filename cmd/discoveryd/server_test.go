@@ -132,36 +132,19 @@ func TestDeregisterService(t *testing.T) {
 	})
 }
 
-func TestGetService(t *testing.T) {
+func TestGetServices(t *testing.T) {
 	server := NewDiscoveryServer()
+	// Manually register services with the server.
+	server.services["test-service-a"] = &apiv1.Service{}
+	server.services["test-service-b"] = &apiv1.Service{}
+	server.services["service-a"] = &apiv1.Service{}
 
-	t.Run("TestNilName", func(t *testing.T) {
-		// Create a request with an empty name and attempt to get services.
-		req := &apiv1.GetServiceRequest{
-			Name: "",
-		}
-		_, err := server.GetService(context.TODO(), req)
-
-		// Get the error status.
-		stat, _ := status.FromError(err)
-
-		// Assert the returned error is due to an invalid argument.
-		assert.NotNil(t, err)
-		assert.Equal(t, codes.InvalidArgument, stat.Code())
-		assert.Equal(t, fmt.Sprintf(MsgMissingRequiredField, "name"), stat.Message())
-	})
-
-	t.Run("TestSuccess", func(t *testing.T) {
-		// Manually register services with the server.
-		server.services["test-service-a"] = &apiv1.Service{}
-		server.services["test-service-b"] = &apiv1.Service{}
-		server.services["service-a"] = &apiv1.Service{}
-
+	t.Run("TestIndividualServiceSuccess", func(t *testing.T) {
 		// Create a valid service and manually register with server.
-		req := &apiv1.GetServiceRequest{
+		req := &apiv1.GetServicesRequest{
 			Name: "test-service",
 		}
-		res, err := server.GetService(context.TODO(), req)
+		res, err := server.GetServices(context.TODO(), req)
 
 		// Assert the returned error is nil and the status code is OK.
 		assert.Nil(t, err)
@@ -169,5 +152,18 @@ func TestGetService(t *testing.T) {
 
 		// Assert the expected service were returned.
 		assert.Equal(t, 2, len(res.Services))
+	})
+
+	t.Run("TestAllServiceSuccess", func(t *testing.T) {
+		// Create a request with an empty name and attempt to get all services.
+		req := &apiv1.GetServicesRequest{}
+		res, err := server.GetServices(context.TODO(), req)
+
+		// Assert the returned error is nil and the status code is OK.
+		assert.Nil(t, err)
+		assert.Equal(t, codes.OK, status.Code(err))
+
+		// Assert the expected service were returned.
+		assert.Equal(t, 3, len(res.Services))
 	})
 }

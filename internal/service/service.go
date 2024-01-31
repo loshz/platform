@@ -15,6 +15,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/loshz/platform/internal/config"
+	"github.com/loshz/platform/internal/discovery"
 	plog "github.com/loshz/platform/internal/log"
 	"github.com/loshz/platform/internal/metrics"
 	"github.com/loshz/platform/internal/version"
@@ -43,6 +44,9 @@ type Service struct {
 
 	// Store the current leadership status.
 	leader atomic.Bool
+
+	// Service used to register/deregister services for discovery.
+	ds *discovery.DiscoveryService
 }
 
 // New creates a named Service with configurable dependencies.

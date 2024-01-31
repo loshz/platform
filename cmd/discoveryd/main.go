@@ -30,7 +30,7 @@ func run(ctx context.Context, s *service.Service) error {
 	// Create new gRPC server TLS credentials.
 	creds, err := pgrpc.NewServerTransportCreds(ca, cert, key)
 	if err != nil {
-		return fmt.Errorf("error :%w", err)
+		return fmt.Errorf("error: %w", err)
 	}
 
 	// Create gRPC server options including interceptors and timeout.

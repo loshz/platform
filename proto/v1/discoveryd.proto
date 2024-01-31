@@ -7,7 +7,7 @@ option go_package = "github.com/loshz/platform/internal/api/v1;apiv1";
 service DiscoveryService {
   rpc RegisterService(RegisterServiceRequest) returns (RegisterServiceResponse) {}
   rpc DeregisterService(DeregisterServiceRequest) returns (DeregisterServiceResponse) {}
-  rpc GetService(GetServiceRequest) returns (GetServiceResponse) {}
+  rpc GetServices(GetServicesRequest) returns (GetServicesResponse) {}
 }
 
 message Service {
@@ -33,10 +33,10 @@ message DeregisterServiceResponse {
   string uuid = 1;
 }
 
-message GetServiceRequest {
+message GetServicesRequest {
   string name = 1;
 }
 
-message GetServiceResponse {
+message GetServicesResponse {
   repeated Service services = 1;
 }

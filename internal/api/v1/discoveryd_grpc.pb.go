@@ -21,7 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	DiscoveryService_RegisterService_FullMethodName   = "/proto.v1.DiscoveryService/RegisterService"
 	DiscoveryService_DeregisterService_FullMethodName = "/proto.v1.DiscoveryService/DeregisterService"
-	DiscoveryService_GetService_FullMethodName        = "/proto.v1.DiscoveryService/GetService"
+	DiscoveryService_GetServices_FullMethodName       = "/proto.v1.DiscoveryService/GetServices"
 )
 
 // DiscoveryServiceClient is the client API for DiscoveryService service.
@@ -30,7 +30,7 @@ const (
 type DiscoveryServiceClient interface {
 	RegisterService(ctx context.Context, in *RegisterServiceRequest, opts ...grpc.CallOption) (*RegisterServiceResponse, error)
 	DeregisterService(ctx context.Context, in *DeregisterServiceRequest, opts ...grpc.CallOption) (*DeregisterServiceResponse, error)
-	GetService(ctx context.Context, in *GetServiceRequest, opts ...grpc.CallOption) (*GetServiceResponse, error)
+	GetServices(ctx context.Context, in *GetServicesRequest, opts ...grpc.CallOption) (*GetServicesResponse, error)
 }
 
 type discoveryServiceClient struct {
@@ -59,9 +59,9 @@ func (c *discoveryServiceClient) DeregisterService(ctx context.Context, in *Dere
 	return out, nil
 }
 
-func (c *discoveryServiceClient) GetService(ctx context.Context, in *GetServiceRequest, opts ...grpc.CallOption) (*GetServiceResponse, error) {
-	out := new(GetServiceResponse)
-	err := c.cc.Invoke(ctx, DiscoveryService_GetService_FullMethodName, in, out, opts...)
+func (c *discoveryServiceClient) GetServices(ctx context.Context, in *GetServicesRequest, opts ...grpc.CallOption) (*GetServicesResponse, error) {
+	out := new(GetServicesResponse)
+	err := c.cc.Invoke(ctx, DiscoveryService_GetServices_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (c *discoveryServiceClient) GetService(ctx context.Context, in *GetServiceR
 type DiscoveryServiceServer interface {
 	RegisterService(context.Context, *RegisterServiceRequest) (*RegisterServiceResponse, error)
 	DeregisterService(context.Context, *DeregisterServiceRequest) (*DeregisterServiceResponse, error)
-	GetService(context.Context, *GetServiceRequest) (*GetServiceResponse, error)
+	GetServices(context.Context, *GetServicesRequest) (*GetServicesResponse, error)
 	mustEmbedUnimplementedDiscoveryServiceServer()
 }
 
@@ -88,8 +88,8 @@ func (UnimplementedDiscoveryServiceServer) RegisterService(context.Context, *Reg
 func (UnimplementedDiscoveryServiceServer) DeregisterService(context.Context, *DeregisterServiceRequest) (*DeregisterServiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeregisterService not implemented")
 }
-func (UnimplementedDiscoveryServiceServer) GetService(context.Context, *GetServiceRequest) (*GetServiceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetService not implemented")
+func (UnimplementedDiscoveryServiceServer) GetServices(context.Context, *GetServicesRequest) (*GetServicesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetServices not implemented")
 }
 func (UnimplementedDiscoveryServiceServer) mustEmbedUnimplementedDiscoveryServiceServer() {}
 
@@ -140,20 +140,20 @@ func _DiscoveryService_DeregisterService_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DiscoveryService_GetService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetServiceRequest)
+func _DiscoveryService_GetServices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetServicesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiscoveryServiceServer).GetService(ctx, in)
+		return srv.(DiscoveryServiceServer).GetServices(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: DiscoveryService_GetService_FullMethodName,
+		FullMethod: DiscoveryService_GetServices_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiscoveryServiceServer).GetService(ctx, req.(*GetServiceRequest))
+		return srv.(DiscoveryServiceServer).GetServices(ctx, req.(*GetServicesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -174,8 +174,8 @@ var DiscoveryService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _DiscoveryService_DeregisterService_Handler,
 		},
 		{
-			MethodName: "GetService",
-			Handler:    _DiscoveryService_GetService_Handler,
+			MethodName: "GetServices",
+			Handler:    _DiscoveryService_GetServices_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

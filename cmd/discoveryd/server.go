@@ -17,6 +17,8 @@ import (
 // missing request fields.
 var MsgMissingRequiredField = "error: missing required '%s' field"
 
+// Services represents a map of individually registered services keyed by the
+// service uuid.
 type Services map[string]*apiv1.Service
 
 type DiscoveryServer struct {
@@ -54,7 +56,7 @@ func (ds *DiscoveryServer) StartEvictionProcess(ctx context.Context) {
 	for {
 		select {
 		case <-t.C:
-			log.Info().Msg("starting service eviction process")
+			log.Info().Msg("polling for expired services")
 			ds.EvictExpiredServices()
 		case <-ctx.Done():
 			return
@@ -103,23 +105,21 @@ func (ds *DiscoveryServer) DeregisterService(_ context.Context, req *apiv1.Dereg
 	}, nil
 }
 
-// GetService returns all currently registered services with a given prefix.
-func (ds *DiscoveryServer) GetService(_ context.Context, req *apiv1.GetServiceRequest) (*apiv1.GetServiceResponse, error) {
-	if req.GetName() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, MsgMissingRequiredField, "name")
-	}
+// GetServices returns all currently registered services with a given prefix.
+func (ds *DiscoveryServer) GetServices(_ context.Context, req *apiv1.GetServicesRequest) (*apiv1.GetServicesResponse, error) {
+	services := []*apiv1.Service{}
+	name := req.GetName()
 
 	ds.mtx.RLock()
 	defer ds.mtx.RUnlock()
 
-	var services []*apiv1.Service
 	for uuid, svc := range ds.services {
-		if strings.HasPrefix(uuid, req.GetName()) {
+		if name == "" || strings.HasPrefix(uuid, name) {
 			services = append(services, svc)
 		}
 	}
 
-	return &apiv1.GetServiceResponse{
+	return &apiv1.GetServicesResponse{
 		Services: services,
 	}, nil
 }
