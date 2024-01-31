@@ -36,6 +36,8 @@ func (s *Service) RegisterDiscovery(ctx context.Context) {
 
 	// Create a timer with a small initial tick to allow service processes to start
 	// before registering for discovery.
+	// TODO: we should attempt to register for discovery immediately, blocking further execution
+	// until successful.
 	t := time.NewTimer(5 * time.Second)
 	defer t.Stop()
 
@@ -72,16 +74,4 @@ func (s *Service) DeregisterDiscovery() error {
 	defer cancel()
 
 	return s.ds.Deregister(ctx, s.ID())
-}
-
-// ServiceDiscovery...
-func (s *Service) ServiceDiscovery() error {
-	svcs, err := s.ds.Lookup(context.Background(), "")
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(svcs)
-
-	return nil
 }
