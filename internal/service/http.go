@@ -37,7 +37,7 @@ func (s *Service) serveHTTP(ctx context.Context) {
 			Service string `json:"service"`
 			Status  string `json:"status"`
 			Leader  bool   `json:"leader"`
-		}{s.ID(), "OK", s.IsLeader()}
+		}{s.ID().String(), "OK", s.IsLeader()}
 
 		if err := json.NewEncoder(w).Encode(res); err != nil {
 			log.Error().Err(err).Msg("error encoding health check response data")

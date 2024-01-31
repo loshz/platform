@@ -48,7 +48,7 @@ func (s *Service) RegisterDiscovery(ctx context.Context) {
 		case <-t.C:
 			req := &apiv1.RegisterServiceRequest{
 				Service: &apiv1.Service{
-					Uuid:     s.ID(),
+					Uuid:     s.ID().String(),
 					HttpPort: uint32(s.Config.Uint(config.KeyHTTPPort)),
 					GrpcPort: uint32(s.Config.Uint(config.KeyGRPCServerPort)),
 					LastSeen: time.Now().Unix(),
@@ -89,7 +89,7 @@ func (s *Service) DeregisterDiscovery() error {
 	client := apiv1.NewDiscoveryServiceClient(conn)
 
 	req := &apiv1.DeregisterServiceRequest{
-		Uuid: s.ID(),
+		Uuid: s.ID().String(),
 	}
 	if _, err := client.DeregisterService(context.Background(), req); err != nil {
 		stat, _ := status.FromError(err)

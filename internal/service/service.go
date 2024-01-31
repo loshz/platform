@@ -6,17 +6,16 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
 	"github.com/loshz/platform/internal/config"
 	plog "github.com/loshz/platform/internal/log"
 	"github.com/loshz/platform/internal/metrics"
+	"github.com/loshz/platform/internal/uuid"
 	"github.com/loshz/platform/internal/version"
 )
 
@@ -36,7 +35,7 @@ type Service struct {
 
 	// UUID of the individual service including name prefix.
 	// E.g., service-xxxx-xxxx
-	id string
+	id uuid.UUID
 
 	// Channel for sending/receiving internal service errors.
 	errCh chan error
@@ -49,15 +48,15 @@ type Service struct {
 func New(name string) *Service {
 	return &Service{
 		Config: config.New(),
-		id:     fmt.Sprintf("%s-%s", strings.ToLower(name), uuid.New()),
+		id:     uuid.New(name),
 		errCh:  make(chan error),
 	}
 }
 
 // Service getter methods.
-func (s *Service) ID() string     { return s.id }
+func (s *Service) ID() uuid.UUID  { return s.id }
 func (s *Service) IsLeader() bool { return s.leader.Load() }
-func (s *Service) Name() string   { return strings.SplitN(s.ID(), "-", 2)[0] }
+func (s *Service) Name() string   { return s.id.Name() }
 
 // Run starts the Service and ensures all dependencies are initialised.
 //
@@ -70,7 +69,7 @@ func (s *Service) Run(run RunFunc) {
 	s.LoadRequiredConfig()
 
 	// Configure global logger.
-	plog.ConfigureGlobalLogging(s.Config.String(config.KeyServiceLogLevel), s.ID(), version.Build)
+	plog.ConfigureGlobalLogging(s.Config.String(config.KeyServiceLogLevel), s.ID().String(), version.Build)
 
 	// Attempt to start the service.
 	if err := s.start(ctx, run); err != nil {
@@ -153,7 +152,7 @@ func (s *Service) start(ctx context.Context, run RunFunc) error {
 		}
 	}
 
-	metrics.ServiceInfo.WithLabelValues(s.ID(), version.Build).Inc()
+	metrics.ServiceInfo.WithLabelValues(s.ID().String(), version.Build).Inc()
 	log.Info().Msg("service started")
 
 	return nil
