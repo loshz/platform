@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	apiv1 "github.com/loshz/platform/internal/api/v1"
+	"github.com/loshz/platform/internal/uuid"
 )
 
 type DiscoveryService struct {
@@ -42,7 +43,7 @@ func (ds *DiscoveryService) Register(ctx context.Context, service *apiv1.Service
 	return nil
 }
 
-func (ds *DiscoveryService) Deregister(ctx context.Context, uuid string) error {
+func (ds *DiscoveryService) Deregister(ctx context.Context, service uuid.UUID) error {
 	conn, err := grpc.Dial(ds.addr, grpc.WithTransportCredentials(ds.creds))
 	if err != nil {
 		return fmt.Errorf("error dialing discovery service: %w", err)
@@ -51,7 +52,7 @@ func (ds *DiscoveryService) Deregister(ctx context.Context, uuid string) error {
 	client := apiv1.NewDiscoveryServiceClient(conn)
 
 	req := &apiv1.DeregisterServiceRequest{
-		Uuid: uuid,
+		Uuid: service.String(),
 	}
 	if _, err := client.DeregisterService(ctx, req); err != nil {
 		stat, _ := status.FromError(err)
