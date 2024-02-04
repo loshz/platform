@@ -2,12 +2,11 @@ package config
 
 const (
 	// Service config.
-	KeyServiceLogLevel         = "service.log.level"
-	KeyServiceStartupTimeout   = "service.startup.timeout"
-	KeyServiceShutdownTimeout  = "service.shutdown.timeout"
-	KeyServiceDiscoveryEnabled = "service.discovery.enabled"
-	KeyServiceDiscoveryAddr    = "service.discovery.addr"
-	KeyServiceRegisterInt      = "service.register.interval"
+	KeyServiceLogLevel        = "service.log.level"
+	KeyServiceStartupTimeout  = "service.startup.timeout"
+	KeyServiceShutdownTimeout = "service.shutdown.timeout"
+	KeyServiceDiscoveryAddr   = "service.discovery.addr"
+	KeyServiceRegisterInt     = "service.register.interval"
 
 	// HTTPS/S server config.
 	KeyHTTPPort         = "http.port"

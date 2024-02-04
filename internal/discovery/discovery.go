@@ -12,19 +12,19 @@ import (
 	apiv1 "github.com/loshz/platform/internal/api/v1"
 )
 
-type DiscoveryService struct {
+type Service struct {
 	addr  string
 	creds credentials.TransportCredentials
 }
 
-func New(addr string, creds credentials.TransportCredentials) *DiscoveryService {
-	return &DiscoveryService{
+func New(addr string, creds credentials.TransportCredentials) *Service {
+	return &Service{
 		addr, creds,
 	}
 }
 
-func (ds *DiscoveryService) Register(ctx context.Context, service *apiv1.Service) error {
-	conn, err := grpc.Dial(ds.addr, grpc.WithTransportCredentials(ds.creds))
+func (s *Service) Register(ctx context.Context, service *apiv1.Service) error {
+	conn, err := grpc.Dial(s.addr, grpc.WithTransportCredentials(s.creds))
 	if err != nil {
 		return fmt.Errorf("error dialing discovery service: %w", err)
 	}
@@ -42,8 +42,8 @@ func (ds *DiscoveryService) Register(ctx context.Context, service *apiv1.Service
 	return nil
 }
 
-func (ds *DiscoveryService) Deregister(ctx context.Context, service_id string) error {
-	conn, err := grpc.Dial(ds.addr, grpc.WithTransportCredentials(ds.creds))
+func (s *Service) Deregister(ctx context.Context, service_id string) error {
+	conn, err := grpc.Dial(s.addr, grpc.WithTransportCredentials(s.creds))
 	if err != nil {
 		return fmt.Errorf("error dialing discovery service: %w", err)
 	}
@@ -61,8 +61,8 @@ func (ds *DiscoveryService) Deregister(ctx context.Context, service_id string) e
 	return nil
 }
 
-func (ds *DiscoveryService) Lookup(ctx context.Context, service string) ([]*apiv1.Service, error) {
-	conn, err := grpc.Dial(ds.addr, grpc.WithTransportCredentials(ds.creds))
+func (s *Service) Lookup(ctx context.Context, service string) ([]*apiv1.Service, error) {
+	conn, err := grpc.Dial(s.addr, grpc.WithTransportCredentials(s.creds))
 	if err != nil {
 		return nil, fmt.Errorf("error dialing discovery service: %w", err)
 	}

@@ -50,7 +50,7 @@ type Service struct {
 	creds *credentials.Store
 
 	// Service used to register/deregister services for discovery.
-	ds *discovery.DiscoveryService
+	ds *discovery.Service
 }
 
 // New creates a named Service with configurable dependencies.
@@ -64,11 +64,12 @@ func New(name string) *Service {
 }
 
 // Service getter methods.
-func (s *Service) Config() *config.Config    { return s.conf }
-func (s *Service) Creds() *credentials.Store { return s.creds }
-func (s *Service) ID() string                { return s.id.String() }
-func (s *Service) IsLeader() bool            { return s.leader.Load() }
-func (s *Service) Name() string              { return s.id.Name() }
+func (s *Service) Config() *config.Config        { return s.conf }
+func (s *Service) Creds() *credentials.Store     { return s.creds }
+func (s *Service) Discovery() *discovery.Service { return s.ds }
+func (s *Service) ID() string                    { return s.id.String() }
+func (s *Service) IsLeader() bool                { return s.leader.Load() }
+func (s *Service) Name() string                  { return s.id.Name() }
 
 // Run starts the Service and ensures all dependencies are initialised.
 //
@@ -90,7 +91,7 @@ func (s *Service) Run(run RunFunc) {
 		s.Exit(ExitStartup)
 	}
 
-	// Register service for discovery.
+	// Register service for discovery if enabled.
 	go s.RegisterDiscovery(ctx)
 
 	// Start the local http server.

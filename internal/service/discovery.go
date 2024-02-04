@@ -12,37 +12,52 @@ import (
 	"github.com/loshz/platform/internal/discovery"
 )
 
+const (
+	// Max no. of discovery register retries.
+	MaxDiscoveryRetries = 3
+)
+
+func (s *Service) EnableDiscovery() {
+	s.LoadDiscoveryConfig()
+	s.ds = discovery.New(s.Config().String(config.KeyServiceDiscoveryAddr), s.Creds().GrpcClient())
+}
+
 // RegisterDiscovery attempts to periodically register a service with the discovery service.
 func (s *Service) RegisterDiscovery(ctx context.Context) {
-	s.LoadDiscoveryConfig()
-
 	// Return early if discovery not enabled.
-	if !s.Config().Bool(config.KeyServiceDiscoveryEnabled) {
+	registerInterval := s.Config().Duration(config.KeyServiceRegisterInt)
+	if registerInterval == 0 {
 		return
 	}
-
-	s.ds = discovery.New(s.Config().String(config.KeyServiceDiscoveryAddr), s.Creds().GrpcClient())
 
 	// Create a timer with a small initial tick to allow service processes to start
 	// before registering for discovery.
 	t := time.NewTimer(5 * time.Second)
 	defer t.Stop()
 
+	// Keep track of failed retries.
+	retries := 0
 	for {
 		select {
 		case <-t.C:
 			// Reset the timer to the larger periodic interval.
-			t.Reset(s.Config().Duration(config.KeyServiceRegisterInt))
+			t.Reset(registerInterval)
 
 			service := &apiv1.Service{
 				Uuid:     s.ID(),
+				Address:  s.Name(), // TODO: this won't work if we run more than 1 replica.
 				HttpPort: uint32(s.Config().Uint(config.KeyHTTPPort)),
 				GrpcPort: uint32(s.Config().Uint(config.KeyGRPCServerPort)),
 				LastSeen: time.Now().Unix(),
 			}
-			if err := s.ds.Register(ctx, service); err != nil {
-				// TODO: we should exit if this has failed multiple times.
-				log.Error().Err(err).Msg("error registering service for discovery")
+			if err := s.ds.Register(context.TODO(), service); err != nil {
+				retries++
+				if retries == MaxDiscoveryRetries {
+					s.Error(fmt.Errorf("failed to register for discovery: %w", err))
+					return
+				}
+
+				log.Error().Err(err).Msg("error registering service for discovery, retrying")
 				continue
 			}
 		case <-ctx.Done():
@@ -61,16 +76,4 @@ func (s *Service) DeregisterDiscovery() error {
 	defer cancel()
 
 	return s.ds.Deregister(ctx, s.ID())
-}
-
-// ServiceDiscovery...
-func (s *Service) ServiceDiscovery() error {
-	svcs, err := s.ds.Lookup(context.Background(), "")
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(svcs)
-
-	return nil
 }

@@ -22,6 +22,9 @@ func run(ctx context.Context, s *service.Service) error {
 		return err
 	}
 
+	// Enable the discovery service.
+	s.EnableDiscovery()
+
 	// Create gRPC server options including interceptors and timeout.
 	opts := []grpc.ServerOption{
 		grpc.Creds(s.Creds().GrpcServer()),
