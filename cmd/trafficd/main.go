@@ -13,15 +13,16 @@ import (
 )
 
 func main() {
-	service.New("trafficd").Run(run)
+	s := service.New("trafficd")
+
+	// Load required service credentials before startup.
+	s.LoadCredentials(credentials.GrpcClient)
+
+	// Run the service.
+	s.Run(run)
 }
 
 func run(ctx context.Context, s *service.Service) error {
-	// Load required service credentials before startup.
-	if err := s.LoadCredentials(credentials.GrpcClient); err != nil {
-		return err
-	}
-
 	go func() {
 		// TODO: don't hard code address.
 		conn, err := grpc.Dial("eventd:8004", grpc.WithTransportCredentials(s.Creds().GrpcClient()))
