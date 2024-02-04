@@ -20,10 +20,10 @@ func TestLoadRequiredConfig(t *testing.T) {
 	s.LoadRequiredConfig()
 
 	// Assert loaded config is as expected.
-	assert.Equal(t, s.Config.Get(config.KeyServiceLogLevel), "debug")
-	assert.Equal(t, s.Config.Get(config.KeyServiceStartupTimeout), "5s")
-	assert.Equal(t, s.Config.Get(config.KeyServiceShutdownTimeout), "10s")
-	assert.Equal(t, s.Config.Get(config.KeyHTTPPort), "8001")
+	assert.Equal(t, s.Config().Get(config.KeyServiceLogLevel), "debug")
+	assert.Equal(t, s.Config().Get(config.KeyServiceStartupTimeout), "5s")
+	assert.Equal(t, s.Config().Get(config.KeyServiceShutdownTimeout), "10s")
+	assert.Equal(t, s.Config().Get(config.KeyHTTPPort), "8001")
 }
 
 func TestLoadGrpcServerConfig(t *testing.T) {
@@ -39,11 +39,11 @@ func TestLoadGrpcServerConfig(t *testing.T) {
 	s.LoadGrpcServerConfig()
 
 	// Assert loaded config is as expected.
-	assert.Equal(t, s.Config.Get(config.KeyGRPCTLSCA), "/path/to/ca")
-	assert.Equal(t, s.Config.Get(config.KeyGRPCServerPort), "8002")
-	assert.Equal(t, s.Config.Get(config.KeyGRPCServerCert), "/path/to/cert")
-	assert.Equal(t, s.Config.Get(config.KeyGRPCServerKey), "/path/to/key")
-	assert.Equal(t, s.Config.Get(config.KeyGRPCServerConnTimeout), "10s")
+	assert.Equal(t, s.Config().Get(config.KeyGRPCTLSCA), "/path/to/ca")
+	assert.Equal(t, s.Config().Get(config.KeyGRPCServerPort), "8002")
+	assert.Equal(t, s.Config().Get(config.KeyGRPCServerCert), "/path/to/cert")
+	assert.Equal(t, s.Config().Get(config.KeyGRPCServerKey), "/path/to/key")
+	assert.Equal(t, s.Config().Get(config.KeyGRPCServerConnTimeout), "10s")
 }
 
 func TestLoadGrpcClientConfig(t *testing.T) {
@@ -57,7 +57,7 @@ func TestLoadGrpcClientConfig(t *testing.T) {
 	s.LoadGrpcClientConfig()
 
 	// Assert loaded config is as expected.
-	assert.Equal(t, s.Config.Get(config.KeyGRPCTLSCA), "/path/to/ca")
-	assert.Equal(t, s.Config.Get(config.KeyGRPCClientCert), "/path/to/cert")
-	assert.Equal(t, s.Config.Get(config.KeyGRPCClientKey), "/path/to/key")
+	assert.Equal(t, s.Config().Get(config.KeyGRPCTLSCA), "/path/to/ca")
+	assert.Equal(t, s.Config().Get(config.KeyGRPCClientCert), "/path/to/cert")
+	assert.Equal(t, s.Config().Get(config.KeyGRPCClientKey), "/path/to/key")
 }

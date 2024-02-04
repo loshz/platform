@@ -27,7 +27,7 @@ func run(ctx context.Context, s *service.Service) error {
 		grpc.Creds(s.Creds().GrpcServer()),
 		grpc.UnaryInterceptor(pgrpc.UnaryInterceptor(s.ID())),
 		grpc.StreamInterceptor(pgrpc.StreamInterceptor(s.ID())),
-		grpc.ConnectionTimeout(s.Config.Duration(config.KeyGRPCServerConnTimeout)),
+		grpc.ConnectionTimeout(s.Config().Duration(config.KeyGRPCServerConnTimeout)),
 	}
 
 	// Create a gRPC server and register the service.

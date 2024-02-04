@@ -19,11 +19,11 @@ func (s *Service) RegisterDiscovery(ctx context.Context) {
 	s.LoadDiscoveryConfig()
 
 	// Return early if discovery not enabled.
-	if !s.Config.Bool(config.KeyServiceDiscoveryEnabled) {
+	if !s.Config().Bool(config.KeyServiceDiscoveryEnabled) {
 		return
 	}
 
-	conn, err := grpc.Dial(s.Config.String(config.KeyServiceDiscoveryAddr), grpc.WithTransportCredentials(s.Creds().GrpcClient()))
+	conn, err := grpc.Dial(s.Config().String(config.KeyServiceDiscoveryAddr), grpc.WithTransportCredentials(s.Creds().GrpcClient()))
 	if err != nil {
 		s.Error(fmt.Errorf("error dialing discovery service: %w", err))
 		return
@@ -31,15 +31,15 @@ func (s *Service) RegisterDiscovery(ctx context.Context) {
 	defer conn.Close()
 	client := apiv1.NewDiscoveryServiceClient(conn)
 
-	t := time.NewTicker(s.Config.Duration(config.KeyServiceRegisterInt))
+	t := time.NewTicker(s.Config().Duration(config.KeyServiceRegisterInt))
 	for {
 		select {
 		case <-t.C:
 			req := &apiv1.RegisterServiceRequest{
 				Service: &apiv1.Service{
 					Uuid:     s.ID().String(),
-					HttpPort: uint32(s.Config.Uint(config.KeyHTTPPort)),
-					GrpcPort: uint32(s.Config.Uint(config.KeyGRPCServerPort)),
+					HttpPort: uint32(s.Config().Uint(config.KeyHTTPPort)),
+					GrpcPort: uint32(s.Config().Uint(config.KeyGRPCServerPort)),
 					LastSeen: time.Now().Unix(),
 				},
 			}
@@ -57,11 +57,11 @@ func (s *Service) RegisterDiscovery(ctx context.Context) {
 // DeregisterDiscovery attempts to deregister a service with the discovery service.
 func (s *Service) DeregisterDiscovery() error {
 	// Return early if discovery not enabled.
-	if !s.Config.Bool(config.KeyServiceDiscoveryEnabled) {
+	if !s.Config().Bool(config.KeyServiceDiscoveryEnabled) {
 		return nil
 	}
 
-	conn, err := grpc.Dial(s.Config.String(config.KeyServiceDiscoveryAddr), grpc.WithTransportCredentials(s.Creds().GrpcClient()))
+	conn, err := grpc.Dial(s.Config().String(config.KeyServiceDiscoveryAddr), grpc.WithTransportCredentials(s.Creds().GrpcClient()))
 	if err != nil {
 		return fmt.Errorf("error dialing discovery service: %w", err)
 	}

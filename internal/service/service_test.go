@@ -15,7 +15,7 @@ func TestStart(t *testing.T) {
 
 	// Create test Service with required config.
 	svc := New("service_test")
-	svc.Config.Set(config.KeyServiceStartupTimeout, "1s")
+	svc.Config().Set(config.KeyServiceStartupTimeout, "1s")
 
 	t.Run("TestStartupError", func(t *testing.T) {
 		expected := errors.New("run error")

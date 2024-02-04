@@ -15,10 +15,10 @@ func (s *Service) LoadCredentials(creds ...credentials.Credential) error {
 		switch cred {
 		case credentials.GrpcClient:
 			s.LoadGrpcClientConfig()
-			err = s.Creds().LoadGrpcClientCreds(s.Config)
+			err = s.Creds().LoadGrpcClientCreds(s.Config())
 		case credentials.GrpcServer:
 			s.LoadGrpcServerConfig()
-			err = s.Creds().LoadGrpcServerCreds(s.Config)
+			err = s.Creds().LoadGrpcServerCreds(s.Config())
 		}
 
 		if err != nil {
