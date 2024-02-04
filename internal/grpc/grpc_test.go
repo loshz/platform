@@ -7,8 +7,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
-
-	"github.com/loshz/platform/internal/uuid"
 )
 
 func TestStreamInterceptor(t *testing.T) {
@@ -25,7 +23,7 @@ func TestStreamInterceptor(t *testing.T) {
 	}
 
 	// Create a new interceptor.
-	interceptor := StreamInterceptor(uuid.New("stream_service"))
+	interceptor := StreamInterceptor("stream_service")
 	err := interceptor(nil, nil, info, handler)
 
 	// Assert that the error from the handler is returned from the
@@ -47,7 +45,7 @@ func TestUnaryInterceptor(t *testing.T) {
 	}
 
 	// Create a new interceptor.
-	interceptor := UnaryInterceptor(uuid.New("stream_service"))
+	interceptor := UnaryInterceptor("stream_service")
 	res, err := interceptor(context.Background(), nil, info, handler)
 
 	// Assert that the response and error from the handler are returned from the
