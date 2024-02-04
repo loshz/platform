@@ -8,7 +8,9 @@ import (
 
 // LoadCredentials attempts to load service credentials from config values into
 // the credentials store.
-func (s *Service) LoadCredentials(creds ...credentials.Credential) error {
+// As this method is intended to be ran before service startup, errors are treated
+// as fatal.
+func (s *Service) LoadCredentials(creds ...credentials.Credential) {
 	for _, cred := range creds {
 		var err error
 
@@ -22,9 +24,7 @@ func (s *Service) LoadCredentials(creds ...credentials.Credential) error {
 		}
 
 		if err != nil {
-			return fmt.Errorf("error loading credentials: %w", err)
+			panic(fmt.Errorf("error loading service credentials: %w", err))
 		}
 	}
-
-	return nil
 }

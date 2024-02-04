@@ -14,15 +14,16 @@ import (
 )
 
 func main() {
-	service.New("trafficd").Run(run)
+	s := service.New("trafficd")
+
+	// Load required service credentials before startup.
+	s.LoadCredentials(credentials.GrpcClient)
+
+	// Run the service.
+	s.Run(run)
 }
 
 func run(ctx context.Context, s *service.Service) error {
-	// Load required service credentials before startup.
-	if err := s.LoadCredentials(credentials.GrpcClient); err != nil {
-		return err
-	}
-
 	// Enable the discovery service.
 	s.EnableDiscovery()
 

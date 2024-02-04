@@ -13,15 +13,16 @@ import (
 )
 
 func main() {
-	service.New("eventd").Run(run)
+	s := service.New("eventd")
+
+	// Load required service credentials before startup.
+	s.LoadCredentials(credentials.GrpcServer, credentials.GrpcClient)
+
+	// Run the service.
+	s.Run(run)
 }
 
 func run(ctx context.Context, s *service.Service) error {
-	// Load required service credentials before startup.
-	if err := s.LoadCredentials(credentials.GrpcServer, credentials.GrpcClient); err != nil {
-		return err
-	}
-
 	// Enable the discovery service.
 	s.EnableDiscovery()
 

@@ -13,15 +13,16 @@ import (
 )
 
 func main() {
-	service.New("discoveryd").Run(run)
+	s := service.New("discoveryd")
+
+	// Load required service credentials before startup.
+	s.LoadCredentials(credentials.GrpcServer)
+
+	// Run the service.
+	s.Run(run)
 }
 
 func run(ctx context.Context, s *service.Service) error {
-	// Load required service credentials before startup.
-	if err := s.LoadCredentials(credentials.GrpcServer); err != nil {
-		return err
-	}
-
 	// Create gRPC server options including interceptors and timeout.
 	opts := []grpc.ServerOption{
 		grpc.Creds(s.Creds().GrpcServer()),
