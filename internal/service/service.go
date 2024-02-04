@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/loshz/platform/internal/config"
+	"github.com/loshz/platform/internal/credentials"
 	"github.com/loshz/platform/internal/discovery"
 	plog "github.com/loshz/platform/internal/log"
 	"github.com/loshz/platform/internal/metrics"
@@ -23,6 +24,7 @@ import (
 const (
 	ExitOK = iota
 	ExitError
+	ExitStartup
 )
 
 // RunFunc is a function that will be called by Run to initialize a service.
@@ -32,7 +34,7 @@ type RunFunc func(context.Context, *Service) error
 // Service represents a platform application.
 type Service struct {
 	// Service configuration.
-	Config *config.Config
+	conf *config.Config
 
 	// UUID of the individual service including name prefix.
 	// E.g., service-xxxx-xxxx
@@ -44,6 +46,9 @@ type Service struct {
 	// Store the current leadership status.
 	leader atomic.Bool
 
+	// Service for storing credentials.
+	creds *credentials.Store
+
 	// Service used to register/deregister services for discovery.
 	ds *discovery.DiscoveryService
 }
@@ -51,16 +56,19 @@ type Service struct {
 // New creates a named Service with configurable dependencies.
 func New(name string) *Service {
 	return &Service{
-		Config: config.New(),
-		id:     uuid.New(name),
-		errCh:  make(chan error),
+		conf:  config.New(),
+		id:    uuid.New(name),
+		errCh: make(chan error),
+		creds: credentials.New(),
 	}
 }
 
 // Service getter methods.
-func (s *Service) ID() uuid.UUID  { return s.id }
-func (s *Service) IsLeader() bool { return s.leader.Load() }
-func (s *Service) Name() string   { return s.id.Name() }
+func (s *Service) Config() *config.Config    { return s.conf }
+func (s *Service) Creds() *credentials.Store { return s.creds }
+func (s *Service) ID() uuid.UUID             { return s.id }
+func (s *Service) IsLeader() bool            { return s.leader.Load() }
+func (s *Service) Name() string              { return s.id.Name() }
 
 // Run starts the Service and ensures all dependencies are initialised.
 //
@@ -73,13 +81,13 @@ func (s *Service) Run(run RunFunc) {
 	s.LoadRequiredConfig()
 
 	// Configure global logger.
-	plog.ConfigureGlobalLogging(s.Config.String(config.KeyServiceLogLevel), s.ID().String(), version.Build)
+	plog.ConfigureGlobalLogging(s.Config().String(config.KeyServiceLogLevel), s.ID().String(), version.Build)
 
 	// Attempt to start the service.
 	if err := s.start(ctx, run); err != nil {
 		log.Error().Err(err).Msg("service startup error")
 		cancel()
-		s.Exit(ExitError)
+		s.Exit(ExitStartup)
 	}
 
 	// Register service for discovery.
@@ -104,8 +112,13 @@ func (s *Service) Error(err error) { s.errCh <- err }
 // Exit cancels the service's context in order to signal a shutdown to child processes.
 // It sleeps for a configurable time before signalling the process to exit.
 func (s *Service) Exit(status int) {
+	// Exit early if startup error.
+	if status == ExitStartup {
+		os.Exit(status)
+	}
+
 	// Force exit after deadline.
-	time.AfterFunc(s.Config.Duration(config.KeyServiceShutdownTimeout), func() {
+	time.AfterFunc(s.Config().Duration(config.KeyServiceShutdownTimeout), func() {
 		log.Error().Msg("service shutdown timeout expired")
 		os.Exit(status)
 	})
@@ -139,7 +152,7 @@ func (s *Service) waitSignal(ctx context.Context) int {
 // as a failed start.
 func (s *Service) start(ctx context.Context, run RunFunc) error {
 	// Configure startup timeout.
-	timeout := s.Config.Duration(config.KeyServiceStartupTimeout)
+	timeout := s.Config().Duration(config.KeyServiceStartupTimeout)
 
 	// Attempt to run the main service func and record error.
 	errCh := make(chan error, 1)
