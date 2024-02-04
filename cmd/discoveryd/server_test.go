@@ -42,7 +42,7 @@ func TestRegisterService(t *testing.T) {
 	t.Run("TestNilService", func(t *testing.T) {
 		// Create an empty request and attempt service registration.
 		req := &apiv1.RegisterServiceRequest{}
-		_, err := server.RegisterService(context.TODO(), req)
+		_, err := server.RegisterService(context.Background(), req)
 
 		// Get the error status.
 		stat, _ := status.FromError(err)
@@ -60,7 +60,7 @@ func TestRegisterService(t *testing.T) {
 				Uuid: "",
 			},
 		}
-		_, err := server.RegisterService(context.TODO(), req)
+		_, err := server.RegisterService(context.Background(), req)
 
 		// Get the error status.
 		stat, _ := status.FromError(err)
@@ -82,7 +82,7 @@ func TestRegisterService(t *testing.T) {
 		req := &apiv1.RegisterServiceRequest{
 			Service: svc,
 		}
-		res, err := server.RegisterService(context.TODO(), req)
+		res, err := server.RegisterService(context.Background(), req)
 
 		// Assert the returned error is nil and the status code is OK.
 		assert.Nil(t, err)
@@ -102,7 +102,7 @@ func TestDeregisterService(t *testing.T) {
 		req := &apiv1.DeregisterServiceRequest{
 			Uuid: "",
 		}
-		_, err := server.DeregisterService(context.TODO(), req)
+		_, err := server.DeregisterService(context.Background(), req)
 
 		// Get the error status.
 		stat, _ := status.FromError(err)
@@ -120,7 +120,7 @@ func TestDeregisterService(t *testing.T) {
 		req := &apiv1.DeregisterServiceRequest{
 			Uuid: uuid,
 		}
-		res, err := server.DeregisterService(context.TODO(), req)
+		res, err := server.DeregisterService(context.Background(), req)
 
 		// Assert the returned error is nil and the status code is OK.
 		assert.Nil(t, err)
@@ -144,7 +144,7 @@ func TestGetServices(t *testing.T) {
 		req := &apiv1.GetServicesRequest{
 			Name: "test-service",
 		}
-		res, err := server.GetServices(context.TODO(), req)
+		res, err := server.GetServices(context.Background(), req)
 
 		// Assert the returned error is nil and the status code is OK.
 		assert.Nil(t, err)
@@ -157,7 +157,7 @@ func TestGetServices(t *testing.T) {
 	t.Run("TestAllServiceSuccess", func(t *testing.T) {
 		// Create a request with an empty name and attempt to get all services.
 		req := &apiv1.GetServicesRequest{}
-		res, err := server.GetServices(context.TODO(), req)
+		res, err := server.GetServices(context.Background(), req)
 
 		// Assert the returned error is nil and the status code is OK.
 		assert.Nil(t, err)

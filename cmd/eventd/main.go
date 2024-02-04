@@ -15,17 +15,15 @@ import (
 func main() {
 	s := service.New("eventd")
 
-	// Load required service credentials before startup.
+	// Load required service credentials and dependencies before startup.
 	s.LoadCredentials(credentials.GrpcServer, credentials.GrpcClient)
+	s.EnableDiscovery()
 
 	// Run the service.
 	s.Run(run)
 }
 
 func run(ctx context.Context, s *service.Service) error {
-	// Enable the discovery service.
-	s.EnableDiscovery()
-
 	// Create gRPC server options including interceptors and timeout.
 	opts := []grpc.ServerOption{
 		grpc.Creds(s.Creds().GrpcServer()),

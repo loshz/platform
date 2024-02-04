@@ -17,6 +17,7 @@ const (
 	MaxDiscoveryRetries = 3
 )
 
+// TODO: refactor this into a dependency loader?
 func (s *Service) EnableDiscovery() {
 	s.LoadDiscoveryConfig()
 	s.ds = discovery.New(s.Config().String(config.KeyServiceDiscoveryAddr), s.Creds().GrpcClient())
@@ -50,7 +51,7 @@ func (s *Service) RegisterDiscovery(ctx context.Context) {
 				GrpcPort: uint32(s.Config().Uint(config.KeyGRPCServerPort)),
 				LastSeen: time.Now().Unix(),
 			}
-			if err := s.ds.Register(context.TODO(), service); err != nil {
+			if err := s.Discovery().Register(context.TODO(), service); err != nil {
 				retries++
 				if retries == MaxDiscoveryRetries {
 					s.Error(fmt.Errorf("failed to register for discovery: %w", err))
@@ -68,12 +69,13 @@ func (s *Service) RegisterDiscovery(ctx context.Context) {
 
 // DeregisterDiscovery attempts to deregister a service with the discovery service.
 func (s *Service) DeregisterDiscovery() error {
-	if s.ds == nil {
+	// Return early if discovery not enabled.
+	if s.Config().Duration(config.KeyServiceRegisterInt) == 0 {
 		return nil
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	return s.ds.Deregister(ctx, s.ID())
+	return s.Discovery().Deregister(ctx, s.ID())
 }
