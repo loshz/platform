@@ -2,40 +2,29 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 
 	apiv1 "github.com/loshz/platform/internal/api/v1"
-	"github.com/loshz/platform/internal/config"
-	pgrpc "github.com/loshz/platform/internal/grpc"
+	"github.com/loshz/platform/internal/credentials"
 	"github.com/loshz/platform/internal/service"
 )
 
 func main() {
-	s := service.New("trafficd")
-
-	// Load required service config.
-	s.LoadGRPCClientConfig()
-
-	s.Run(run)
+	service.New("trafficd").Run(run)
 }
 
 func run(ctx context.Context, s *service.Service) error {
-	// Load TLS credentials.
-	ca := s.Config.String(config.KeyGRPCTLSCA)
-	cert := s.Config.String(config.KeyGRPCClientCert)
-	key := s.Config.String(config.KeyGRPCClientKey)
-	creds, err := pgrpc.NewClientTransportCreds(ca, cert, key)
-	if err != nil {
-		return fmt.Errorf("error loading grpc tls credentials: %w", err)
+	// Load required service credentials before startup.
+	if err := s.LoadCredentials(credentials.GrpcClient); err != nil {
+		return err
 	}
 
 	go func() {
 		// TODO: don't hard code address.
-		conn, err := grpc.Dial("eventd:8004", grpc.WithTransportCredentials(creds))
+		conn, err := grpc.Dial("eventd:8004", grpc.WithTransportCredentials(s.Creds().GrpcClient()))
 		if err != nil {
 			log.Error().Err(err).Msg("error dialing eventd")
 			// TODO: s.Exit() or continually check for conn.

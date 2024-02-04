@@ -26,7 +26,7 @@ func TestLoadRequiredConfig(t *testing.T) {
 	assert.Equal(t, s.Config.Get(config.KeyHTTPPort), "8001")
 }
 
-func TestLoadGRPCServerConfig(t *testing.T) {
+func TestLoadGrpcServerConfig(t *testing.T) {
 	// Set gRPC env vars.
 	t.Setenv("PLAT_GRPC_TLS_CA", "/path/to/ca")
 	t.Setenv("PLAT_GRPC_SERVER_PORT", "8002")
@@ -36,7 +36,7 @@ func TestLoadGRPCServerConfig(t *testing.T) {
 
 	// Create a new service and load grpc server config.
 	s := New("test")
-	s.LoadGRPCServerConfig()
+	s.LoadGrpcServerConfig()
 
 	// Assert loaded config is as expected.
 	assert.Equal(t, s.Config.Get(config.KeyGRPCTLSCA), "/path/to/ca")
@@ -46,7 +46,7 @@ func TestLoadGRPCServerConfig(t *testing.T) {
 	assert.Equal(t, s.Config.Get(config.KeyGRPCServerConnTimeout), "10s")
 }
 
-func TestLoadGRPCClientConfig(t *testing.T) {
+func TestLoadGrpcClientConfig(t *testing.T) {
 	// Set gRPC env vars.
 	t.Setenv("PLAT_GRPC_TLS_CA", "/path/to/ca")
 	t.Setenv("PLAT_GRPC_CLIENT_CERT", "/path/to/cert")
@@ -54,7 +54,7 @@ func TestLoadGRPCClientConfig(t *testing.T) {
 
 	// Create a new service and load grpc client config.
 	s := New("test")
-	s.LoadGRPCClientConfig()
+	s.LoadGrpcClientConfig()
 
 	// Assert loaded config is as expected.
 	assert.Equal(t, s.Config.Get(config.KeyGRPCTLSCA), "/path/to/ca")

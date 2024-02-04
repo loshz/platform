@@ -12,7 +12,6 @@ import (
 
 	apiv1 "github.com/loshz/platform/internal/api/v1"
 	"github.com/loshz/platform/internal/config"
-	pgrpc "github.com/loshz/platform/internal/grpc"
 )
 
 // RegisterDiscovery attempts to periodically register a service with the discovery service.
@@ -24,17 +23,7 @@ func (s *Service) RegisterDiscovery(ctx context.Context) {
 		return
 	}
 
-	// Load TLS credentials.
-	ca := s.Config.String(config.KeyGRPCTLSCA)
-	cert := s.Config.String(config.KeyGRPCClientCert)
-	key := s.Config.String(config.KeyGRPCClientKey)
-	creds, err := pgrpc.NewClientTransportCreds(ca, cert, key)
-	if err != nil {
-		s.Error(fmt.Errorf("error loading grpc tls credentials: %w", err))
-		return
-	}
-
-	conn, err := grpc.Dial(s.Config.String(config.KeyServiceDiscoveryAddr), grpc.WithTransportCredentials(creds))
+	conn, err := grpc.Dial(s.Config.String(config.KeyServiceDiscoveryAddr), grpc.WithTransportCredentials(s.Creds().GrpcClient()))
 	if err != nil {
 		s.Error(fmt.Errorf("error dialing discovery service: %w", err))
 		return
@@ -72,16 +61,7 @@ func (s *Service) DeregisterDiscovery() error {
 		return nil
 	}
 
-	// Load TLS credentials.
-	ca := s.Config.String(config.KeyGRPCTLSCA)
-	cert := s.Config.String(config.KeyGRPCClientCert)
-	key := s.Config.String(config.KeyGRPCClientKey)
-	creds, err := pgrpc.NewClientTransportCreds(ca, cert, key)
-	if err != nil {
-		return fmt.Errorf("error loading grpc tls credentials: %w", err)
-	}
-
-	conn, err := grpc.Dial(s.Config.String(config.KeyServiceDiscoveryAddr), grpc.WithTransportCredentials(creds))
+	conn, err := grpc.Dial(s.Config.String(config.KeyServiceDiscoveryAddr), grpc.WithTransportCredentials(s.Creds().GrpcClient()))
 	if err != nil {
 		return fmt.Errorf("error dialing discovery service: %w", err)
 	}

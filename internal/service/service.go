@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/loshz/platform/internal/config"
+	"github.com/loshz/platform/internal/credentials"
 	plog "github.com/loshz/platform/internal/log"
 	"github.com/loshz/platform/internal/metrics"
 	"github.com/loshz/platform/internal/uuid"
@@ -22,6 +23,7 @@ import (
 const (
 	ExitOK = iota
 	ExitError
+	ExitStartup
 )
 
 // RunFunc is a function that will be called by Run to initialize a service.
@@ -42,6 +44,9 @@ type Service struct {
 
 	// Store the current leadership status.
 	leader atomic.Bool
+
+	// Service for storing credentials.
+	creds *credentials.Store
 }
 
 // New creates a named Service with configurable dependencies.
@@ -50,13 +55,15 @@ func New(name string) *Service {
 		Config: config.New(),
 		id:     uuid.New(name),
 		errCh:  make(chan error),
+		creds:  credentials.New(),
 	}
 }
 
 // Service getter methods.
-func (s *Service) ID() uuid.UUID  { return s.id }
-func (s *Service) IsLeader() bool { return s.leader.Load() }
-func (s *Service) Name() string   { return s.id.Name() }
+func (s *Service) Creds() *credentials.Store { return s.creds }
+func (s *Service) ID() uuid.UUID             { return s.id }
+func (s *Service) IsLeader() bool            { return s.leader.Load() }
+func (s *Service) Name() string              { return s.id.Name() }
 
 // Run starts the Service and ensures all dependencies are initialised.
 //
@@ -75,7 +82,7 @@ func (s *Service) Run(run RunFunc) {
 	if err := s.start(ctx, run); err != nil {
 		log.Error().Err(err).Msg("service startup error")
 		cancel()
-		s.Exit(ExitError)
+		s.Exit(ExitStartup)
 	}
 
 	// Register service for discovery.
@@ -100,6 +107,11 @@ func (s *Service) Error(err error) { s.errCh <- err }
 // Exit cancels the service's context in order to signal a shutdown to child processes.
 // It sleeps for a configurable time before signalling the process to exit.
 func (s *Service) Exit(status int) {
+	// Exit early if startup error.
+	if status == ExitStartup {
+		os.Exit(status)
+	}
+
 	// Force exit after deadline.
 	time.AfterFunc(s.Config.Duration(config.KeyServiceShutdownTimeout), func() {
 		log.Error().Msg("service shutdown timeout expired")
