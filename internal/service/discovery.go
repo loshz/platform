@@ -35,7 +35,7 @@ func (s *Service) RegisterDiscovery(ctx context.Context) {
 			t.Reset(s.Config().Duration(config.KeyServiceRegisterInt))
 
 			service := &apiv1.Service{
-				Uuid:     s.ID().String(),
+				Uuid:     s.ID(),
 				HttpPort: uint32(s.Config().Uint(config.KeyHTTPPort)),
 				GrpcPort: uint32(s.Config().Uint(config.KeyGRPCServerPort)),
 				LastSeen: time.Now().Unix(),

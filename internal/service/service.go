@@ -66,7 +66,7 @@ func New(name string) *Service {
 // Service getter methods.
 func (s *Service) Config() *config.Config    { return s.conf }
 func (s *Service) Creds() *credentials.Store { return s.creds }
-func (s *Service) ID() uuid.UUID             { return s.id }
+func (s *Service) ID() string                { return s.id.String() }
 func (s *Service) IsLeader() bool            { return s.leader.Load() }
 func (s *Service) Name() string              { return s.id.Name() }
 
@@ -81,7 +81,7 @@ func (s *Service) Run(run RunFunc) {
 	s.LoadRequiredConfig()
 
 	// Configure global logger.
-	plog.ConfigureGlobalLogging(s.Config().String(config.KeyServiceLogLevel), s.ID().String(), version.Build)
+	plog.ConfigureGlobalLogging(s.Config().String(config.KeyServiceLogLevel), s.ID(), version.Build)
 
 	// Attempt to start the service.
 	if err := s.start(ctx, run); err != nil {
@@ -169,7 +169,7 @@ func (s *Service) start(ctx context.Context, run RunFunc) error {
 		}
 	}
 
-	metrics.ServiceInfo.WithLabelValues(s.ID().String(), version.Build).Inc()
+	metrics.ServiceInfo.WithLabelValues(s.ID(), version.Build).Inc()
 	log.Info().Msg("service started")
 
 	return nil
