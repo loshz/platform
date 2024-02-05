@@ -17,7 +17,6 @@ func main() {
 
 	// Load required service credentials and dependencies before startup.
 	s.LoadCredentials(credentials.GrpcServer, credentials.GrpcClient)
-	s.EnableDiscovery()
 
 	// Run the service.
 	s.Run(run)

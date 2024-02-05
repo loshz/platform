@@ -52,11 +52,11 @@ func (ds *DiscoveryServer) EvictExpiredServices() {
 }
 
 func (ds *DiscoveryServer) StartEvictionProcess(ctx context.Context) {
+	log.Info().Msg("polling for expired services every 60s")
 	t := time.NewTicker(60 * time.Second)
 	for {
 		select {
 		case <-t.C:
-			log.Info().Msg("polling for expired services")
 			ds.EvictExpiredServices()
 		case <-ctx.Done():
 			return

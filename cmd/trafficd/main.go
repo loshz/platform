@@ -18,7 +18,6 @@ func main() {
 
 	// Load required service credentials and dependencies before startup.
 	s.LoadCredentials(credentials.GrpcClient)
-	s.EnableDiscovery()
 
 	// Run the service.
 	s.Run(run)
@@ -26,8 +25,8 @@ func main() {
 
 func run(ctx context.Context, s *service.Service) error {
 	go func() {
-		// TODO: add retries instead of sleeping.
-		time.Sleep(30 * time.Second)
+		// TODO: refactor this whole function to use periodic refresh and retries.
+		time.Sleep(10 * time.Second)
 
 		// Get eventd address.
 		svcs, err := s.Discovery().Lookup(context.Background(), "eventd")
@@ -36,6 +35,7 @@ func run(ctx context.Context, s *service.Service) error {
 			return
 		}
 
+		// TODO: perform sanity check on returned events services.
 		eventd := fmt.Sprintf("%s:%d", svcs[0].Address, svcs[0].GrpcPort)
 		conn, err := grpc.Dial(eventd, grpc.WithTransportCredentials(s.Creds().GrpcClient()))
 		if err != nil {

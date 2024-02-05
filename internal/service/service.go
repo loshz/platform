@@ -84,15 +84,15 @@ func (s *Service) Run(run RunFunc) {
 	// Configure global logger.
 	plog.ConfigureGlobalLogging(s.Config().String(config.KeyServiceLogLevel), s.ID(), version.Build)
 
+	// Register service for discovery if enabled.
+	s.EnableDiscovery(ctx)
+
 	// Attempt to start the service.
 	if err := s.start(ctx, run); err != nil {
 		log.Error().Err(err).Msg("service startup error")
 		cancel()
 		s.Exit(ExitStartup)
 	}
-
-	// Register service for discovery if enabled.
-	go s.RegisterDiscovery(ctx)
 
 	// Start the local http server.
 	go s.serveHTTP(ctx)
@@ -124,9 +124,7 @@ func (s *Service) Exit(status int) {
 		os.Exit(status)
 	})
 
-	if err := s.DeregisterDiscovery(); err != nil {
-		log.Error().Err(err).Msg("error deregistering service from discovery")
-	}
+	// TODO: we never give things time to shut down, fix this.
 
 	os.Exit(status)
 }
