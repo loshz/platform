@@ -58,7 +58,7 @@ func New(name string) *Service {
 	return &Service{
 		conf:  config.New(),
 		id:    uuid.New(name),
-		errCh: make(chan error),
+		errCh: make(chan error, 1),
 		creds: credentials.New(),
 	}
 }

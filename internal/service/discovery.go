@@ -21,14 +21,18 @@ const (
 func (s *Service) EnableDiscovery(ctx context.Context) {
 	s.LoadDiscoveryConfig()
 
-	// Create a new discovery service with credentials.
-	s.ds = discovery.New(s.Config().String(config.KeyServiceDiscoveryAddr), s.Creds().GrpcClient())
-
 	// Return early if discovery not enabled.
-	registerInterval := s.Config().Duration(config.KeyServiceRegisterInt)
-	if registerInterval == 0 {
+	if !s.Config().Bool(config.KeyServiceDiscoveryEnabled) {
 		return
 	}
+
+	// Create a new discovery service with credentials.
+	ds, err := discovery.New(ctx, s.Config().String(config.KeyServiceDiscoveryAddr), s.Creds().GrpcClient())
+	if err != nil {
+		s.Error(err)
+		return
+	}
+	s.ds = ds
 
 	go func() {
 		// Create a timer with a small initial tick to allow service processes to start
@@ -42,7 +46,7 @@ func (s *Service) EnableDiscovery(ctx context.Context) {
 			select {
 			case <-t.C:
 				// Reset the timer to the larger periodic interval.
-				t.Reset(registerInterval)
+				t.Reset(s.Config().Duration(config.KeyServiceRegisterInt))
 
 				service := &apiv1.Service{
 					Uuid:     s.ID(),

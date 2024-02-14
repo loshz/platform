@@ -13,6 +13,7 @@ func (s *Service) LoadRequiredConfig() {
 
 // LoadDiscoveryConfig is a helper function for loading service discovery config.
 func (s *Service) LoadDiscoveryConfig() {
+	s.Config().MustLoad(config.KeyServiceDiscoveryEnabled, true, config.ParseBool)
 	s.Config().MustLoad(config.KeyServiceDiscoveryAddr, "discoveryd:8000", config.ParseString)
 	s.Config().MustLoad(config.KeyServiceRegisterInt, "300s", config.ParseDuration)
 }
