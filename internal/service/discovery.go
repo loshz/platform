@@ -40,19 +40,24 @@ func (s *Service) EnableDiscovery(ctx context.Context) {
 		t := time.NewTimer(5 * time.Second)
 		defer t.Stop()
 
+		// Get service details from config.
+		interval := s.Config().Duration(config.KeyServiceRegisterInt)
+		httpPort := s.Config().Uint(config.KeyHTTPPort)
+		grpcPort := s.Config().Uint(config.KeyGRPCServerPort)
+
 		// Keep track of failed retries.
 		retries := 0
 		for {
 			select {
 			case <-t.C:
 				// Reset the timer to the larger periodic interval.
-				t.Reset(s.Config().Duration(config.KeyServiceRegisterInt))
+				t.Reset(interval)
 
 				service := &apiv1.Service{
 					Uuid:     s.ID(),
 					Address:  s.Name(), // TODO: this won't work if we run more than 1 replica.
-					HttpPort: uint32(s.Config().Uint(config.KeyHTTPPort)),
-					GrpcPort: uint32(s.Config().Uint(config.KeyGRPCServerPort)),
+					HttpPort: uint32(httpPort),
+					GrpcPort: uint32(grpcPort),
 					LastSeen: time.Now().Unix(),
 				}
 				if err := s.Discovery().Register(context.TODO(), service); err != nil {

@@ -35,7 +35,7 @@ func run(ctx context.Context, s *service.Service) error {
 			return
 		}
 
-		// TODO: perform sanity check on returned events services.
+		// TODO: perform sanity check on returned eventd services.
 		eventd := fmt.Sprintf("%s:%d", svcs[0].Address, svcs[0].GrpcPort)
 		conn, err := grpc.Dial(eventd, grpc.WithTransportCredentials(s.Creds().GrpcClient()))
 		if err != nil {
