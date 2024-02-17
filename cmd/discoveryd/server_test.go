@@ -156,7 +156,9 @@ func TestGetServices(t *testing.T) {
 
 	t.Run("TestAllServiceSuccess", func(t *testing.T) {
 		// Create a request with an empty name and attempt to get all services.
-		req := &apiv1.GetServicesRequest{}
+		req := &apiv1.GetServicesRequest{
+			Name: DelimeterAll,
+		}
 		res, err := server.GetServices(context.Background(), req)
 
 		// Assert the returned error is nil and the status code is OK.
