@@ -23,7 +23,8 @@ FROM alpine:3.19
 ARG USER=platform
 
 # Install runtime dependencies
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates \
+  && apk --no-cache add curl
 
 # Create group (-g/-G) and system user (-S)
 # with specific UID (-u) and no password (-D)
