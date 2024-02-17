@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -25,6 +26,8 @@ func New(ctx context.Context, addr string, creds credentials.TransportCredential
 
 	go func() {
 		<-ctx.Done()
+		// Small sleep so services can attempt to deregister.
+		time.Sleep(500 * time.Millisecond)
 		_ = conn.Close()
 	}()
 

@@ -16,7 +16,7 @@ func main() {
 	s := service.New("eventd")
 
 	// Load required service credentials and dependencies before startup.
-	s.LoadCredentials(credentials.GrpcServer, credentials.GrpcClient)
+	s.LoadCredentials(credentials.GrpcClient, credentials.GrpcServer)
 
 	// Run the service.
 	s.Run(run)

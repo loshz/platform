@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -43,6 +44,9 @@ type Service struct {
 	// Channel for sending/receiving internal service errors.
 	errCh chan error
 
+	// WaitGroup used to control shutdown of key goroutines.
+	wg *sync.WaitGroup
+
 	// Store the current leadership status.
 	leader atomic.Bool
 
@@ -59,6 +63,7 @@ func New(name string) *Service {
 		conf:  config.New(),
 		id:    uuid.New(name),
 		errCh: make(chan error, 1),
+		wg:    new(sync.WaitGroup),
 		creds: credentials.New(),
 	}
 }
@@ -70,6 +75,7 @@ func (s *Service) Discovery() *discovery.Service { return s.ds }
 func (s *Service) ID() string                    { return s.id.String() }
 func (s *Service) IsLeader() bool                { return s.leader.Load() }
 func (s *Service) Name() string                  { return s.id.Name() }
+func (s *Service) Scheduler() *sync.WaitGroup    { return s.wg }
 
 // Run starts the Service and ensures all dependencies are initialised.
 //
@@ -124,8 +130,8 @@ func (s *Service) Exit(status int) {
 		os.Exit(status)
 	})
 
-	// TODO: we never give things time to shut down, add a Service waitgroup
-	// to control signaling of necessary goroutine shutdown.
+	// Wait for individual service goroutine shutdown.
+	s.Scheduler().Wait()
 
 	os.Exit(status)
 }
@@ -136,7 +142,7 @@ func (s *Service) waitSignal(ctx context.Context) int {
 	// Wait for signal to be received.
 	select {
 	case <-ctx.Done():
-		log.Info().Msg("stop signal received, starting shut down")
+		log.Info().Msg("stop signal received, starting shutdown")
 	case err := <-s.errCh:
 		// Always return an error as nothing should be sending nil
 		// to this channel.

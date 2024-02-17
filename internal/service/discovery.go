@@ -34,10 +34,13 @@ func (s *Service) EnableDiscovery(ctx context.Context) {
 	}
 	s.ds = ds
 
+	s.Scheduler().Add(1)
 	go func() {
+		defer s.Scheduler().Done()
+
 		// Create a timer with a small initial tick to allow service processes to start
 		// before registering for discovery.
-		t := time.NewTimer(5 * time.Second)
+		t := time.NewTimer(s.Config().Duration(config.KeyServiceStartupTimeout))
 		defer t.Stop()
 
 		// Get service details from config.

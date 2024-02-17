@@ -18,6 +18,9 @@ import (
 //
 // By default, it will register pprof, metrics and health endpoints.
 func (s *Service) serveHTTP(ctx context.Context) {
+	s.Scheduler().Add(1)
+	defer s.Scheduler().Done()
+
 	port := fmt.Sprintf(":%d", s.Config().Int(config.KeyHTTPPort))
 	router := http.NewServeMux()
 
