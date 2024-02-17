@@ -124,7 +124,8 @@ func (s *Service) Exit(status int) {
 		os.Exit(status)
 	})
 
-	// TODO: we never give things time to shut down, fix this.
+	// TODO: we never give things time to shut down, add a Service waitgroup
+	// to control signaling of necessary goroutine shutdown.
 
 	os.Exit(status)
 }
