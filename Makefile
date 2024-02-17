@@ -4,7 +4,7 @@ BIN_DIR ?= ${CURDIR}/bin
 GOARCH ?= amd64
 GOOS ?= linux
 GO_TEST_FLAGS ?= -failfast -race
-PROTOC_VERSION ?= 25.2
+PROTOC_VERSION ?= 25.3
 
 # Docker config.
 DOCKER ?= sudo docker
