@@ -14,6 +14,7 @@ import (
 
 	"github.com/loshz/platform/internal/config"
 	"github.com/loshz/platform/internal/credentials"
+	"github.com/loshz/platform/internal/discovery"
 	plog "github.com/loshz/platform/internal/log"
 	"github.com/loshz/platform/internal/metrics"
 	"github.com/loshz/platform/internal/uuid"
@@ -47,6 +48,9 @@ type Service struct {
 
 	// Service for storing credentials.
 	creds *credentials.Store
+
+	// Service used to register/deregister services for discovery.
+	ds *discovery.Service
 }
 
 // New creates a named Service with configurable dependencies.
@@ -54,17 +58,18 @@ func New(name string) *Service {
 	return &Service{
 		conf:  config.New(),
 		id:    uuid.New(name),
-		errCh: make(chan error),
+		errCh: make(chan error, 1),
 		creds: credentials.New(),
 	}
 }
 
 // Service getter methods.
-func (s *Service) Config() *config.Config    { return s.conf }
-func (s *Service) Creds() *credentials.Store { return s.creds }
-func (s *Service) ID() string                { return s.id.String() }
-func (s *Service) IsLeader() bool            { return s.leader.Load() }
-func (s *Service) Name() string              { return s.id.Name() }
+func (s *Service) Config() *config.Config        { return s.conf }
+func (s *Service) Creds() *credentials.Store     { return s.creds }
+func (s *Service) Discovery() *discovery.Service { return s.ds }
+func (s *Service) ID() string                    { return s.id.String() }
+func (s *Service) IsLeader() bool                { return s.leader.Load() }
+func (s *Service) Name() string                  { return s.id.Name() }
 
 // Run starts the Service and ensures all dependencies are initialised.
 //
@@ -79,15 +84,15 @@ func (s *Service) Run(run RunFunc) {
 	// Configure global logger.
 	plog.ConfigureGlobalLogging(s.Config().String(config.KeyServiceLogLevel), s.ID(), version.Build)
 
+	// Register service for discovery if enabled.
+	s.EnableDiscovery(ctx)
+
 	// Attempt to start the service.
 	if err := s.start(ctx, run); err != nil {
 		log.Error().Err(err).Msg("service startup error")
 		cancel()
 		s.Exit(ExitStartup)
 	}
-
-	// Register service for discovery.
-	go s.RegisterDiscovery(ctx)
 
 	// Start the local http server.
 	go s.serveHTTP(ctx)
@@ -119,9 +124,8 @@ func (s *Service) Exit(status int) {
 		os.Exit(status)
 	})
 
-	if err := s.DeregisterDiscovery(); err != nil {
-		log.Error().Err(err).Msg("error deregistering service from discovery")
-	}
+	// TODO: we never give things time to shut down, add a Service waitgroup
+	// to control signaling of necessary goroutine shutdown.
 
 	os.Exit(status)
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -15,7 +16,7 @@ import (
 func main() {
 	s := service.New("trafficd")
 
-	// Load required service credentials before startup.
+	// Load required service credentials and dependencies before startup.
 	s.LoadCredentials(credentials.GrpcClient)
 
 	// Run the service.
@@ -24,13 +25,23 @@ func main() {
 
 func run(ctx context.Context, s *service.Service) error {
 	go func() {
-		// TODO: don't hard code address.
-		conn, err := grpc.Dial("eventd:8004", grpc.WithTransportCredentials(s.Creds().GrpcClient()))
+		// TODO: refactor this whole function to use periodic refresh and retries.
+		time.Sleep(10 * time.Second)
+
+		// Get eventd address.
+		svcs, err := s.Discovery().Lookup(context.Background(), "eventd")
 		if err != nil {
-			log.Error().Err(err).Msg("error dialing eventd")
-			// TODO: s.Exit() or continually check for conn.
+			s.Error(fmt.Errorf("error getting eventd service details from discovery: %w", err))
+			return
 		}
-		defer conn.Close()
+
+		// TODO: perform sanity check on returned eventd services.
+		eventd := fmt.Sprintf("%s:%d", svcs[0].Address, svcs[0].GrpcPort)
+		conn, err := grpc.Dial(eventd, grpc.WithTransportCredentials(s.Creds().GrpcClient()))
+		if err != nil {
+			s.Error(fmt.Errorf("error dialing eventd: %w", err))
+			return
+		}
 		client := apiv1.NewEventServiceClient(conn)
 
 		t := time.NewTicker(10 * time.Second)

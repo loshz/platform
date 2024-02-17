@@ -2,20 +2,23 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/status"
 
 	apiv1 "github.com/loshz/platform/internal/api/v1"
 	"github.com/loshz/platform/internal/config"
+	"github.com/loshz/platform/internal/discovery"
 )
 
-// RegisterDiscovery attempts to periodically register a service with the discovery service.
-func (s *Service) RegisterDiscovery(ctx context.Context) {
+const (
+	// Max no. of discovery register retries.
+	MaxDiscoveryRetries = 3
+)
+
+// EnableDiscovery attempts to periodically register a service with the discovery service.
+func (s *Service) EnableDiscovery(ctx context.Context) {
 	s.LoadDiscoveryConfig()
 
 	// Return early if discovery not enabled.
@@ -23,58 +26,59 @@ func (s *Service) RegisterDiscovery(ctx context.Context) {
 		return
 	}
 
-	conn, err := grpc.Dial(s.Config().String(config.KeyServiceDiscoveryAddr), grpc.WithTransportCredentials(s.Creds().GrpcClient()))
+	// Create a new discovery service with credentials.
+	ds, err := discovery.New(ctx, s.Config().String(config.KeyServiceDiscoveryAddr), s.Creds().GrpcClient())
 	if err != nil {
-		s.Error(fmt.Errorf("error dialing discovery service: %w", err))
+		s.Error(err)
 		return
 	}
-	defer conn.Close()
-	client := apiv1.NewDiscoveryServiceClient(conn)
+	s.ds = ds
 
-	t := time.NewTicker(s.Config().Duration(config.KeyServiceRegisterInt))
-	for {
-		select {
-		case <-t.C:
-			req := &apiv1.RegisterServiceRequest{
-				Service: &apiv1.Service{
+	go func() {
+		// Create a timer with a small initial tick to allow service processes to start
+		// before registering for discovery.
+		t := time.NewTimer(5 * time.Second)
+		defer t.Stop()
+
+		// Get service details from config.
+		interval := s.Config().Duration(config.KeyServiceRegisterInt)
+		httpPort := s.Config().Uint(config.KeyHTTPPort)
+		grpcPort := s.Config().Uint(config.KeyGRPCServerPort)
+
+		// Keep track of failed retries.
+		retries := 0
+		for {
+			select {
+			case <-t.C:
+				// Reset the timer to the larger periodic interval.
+				t.Reset(interval)
+
+				service := &apiv1.Service{
 					Uuid:     s.ID(),
-					HttpPort: uint32(s.Config().Uint(config.KeyHTTPPort)),
-					GrpcPort: uint32(s.Config().Uint(config.KeyGRPCServerPort)),
+					Address:  s.Name(), // TODO: this won't work if we run more than 1 replica.
+					HttpPort: uint32(httpPort),
+					GrpcPort: uint32(grpcPort),
 					LastSeen: time.Now().Unix(),
-				},
+				}
+				if err := s.Discovery().Register(context.TODO(), service); err != nil {
+					retries++
+					if retries == MaxDiscoveryRetries {
+						s.Error(fmt.Errorf("failed to register for discovery: %w", err))
+						return
+					}
+
+					log.Error().Err(err).Msg("error registering service for discovery, retrying")
+					continue
+				}
+			case <-ctx.Done():
+				// Attempt to deregister the service on shutdown.
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				if err := s.Discovery().Deregister(ctx, s.ID()); err != nil {
+					log.Error().Err(err).Msg("error deregistering service from discovery")
+				}
+				cancel()
+				return
 			}
-			if _, err := client.RegisterService(context.Background(), req); err != nil {
-				stat, _ := status.FromError(err)
-				log.Error().Err(errors.New(stat.Message())).Str("code", stat.Code().String()).Msg("error registering service for discovery")
-				continue
-			}
-		case <-ctx.Done():
-			return
 		}
-	}
-}
-
-// DeregisterDiscovery attempts to deregister a service with the discovery service.
-func (s *Service) DeregisterDiscovery() error {
-	// Return early if discovery not enabled.
-	if !s.Config().Bool(config.KeyServiceDiscoveryEnabled) {
-		return nil
-	}
-
-	conn, err := grpc.Dial(s.Config().String(config.KeyServiceDiscoveryAddr), grpc.WithTransportCredentials(s.Creds().GrpcClient()))
-	if err != nil {
-		return fmt.Errorf("error dialing discovery service: %w", err)
-	}
-	defer conn.Close()
-	client := apiv1.NewDiscoveryServiceClient(conn)
-
-	req := &apiv1.DeregisterServiceRequest{
-		Uuid: s.ID(),
-	}
-	if _, err := client.DeregisterService(context.Background(), req); err != nil {
-		stat, _ := status.FromError(err)
-		return errors.New(stat.Message())
-	}
-
-	return nil
+	}()
 }
