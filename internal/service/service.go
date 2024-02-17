@@ -64,7 +64,8 @@ func New(name string) *Service {
 		id:    uuid.New(name),
 		errCh: make(chan error, 1),
 		wg:    new(sync.WaitGroup),
-		creds: credentials.New(),
+		creds: new(credentials.Store),
+		ds:    new(discovery.Service),
 	}
 }
 
@@ -90,18 +91,12 @@ func (s *Service) Run(run RunFunc) {
 	// Configure global logger.
 	plog.ConfigureGlobalLogging(s.Config().String(config.KeyServiceLogLevel), s.ID(), version.Build)
 
-	// Register service for discovery if enabled.
-	s.EnableDiscovery(ctx)
-
 	// Attempt to start the service.
 	if err := s.start(ctx, run); err != nil {
 		log.Error().Err(err).Msg("service startup error")
 		cancel()
 		s.Exit(ExitStartup)
 	}
-
-	// Start the local http server.
-	go s.serveHTTP(ctx)
 
 	// Wait for an exit signal or service error.
 	status := s.waitSignal(ctx)
@@ -157,23 +152,21 @@ func (s *Service) waitSignal(ctx context.Context) int {
 // If the deadline exceeds the time taken to run the service, it is treated
 // as a failed start.
 func (s *Service) start(ctx context.Context, run RunFunc) error {
-	// Configure startup timeout.
-	timeout := s.Config().Duration(config.KeyServiceStartupTimeout)
+	// Start the discovery service.
+	if err := s.StartDiscovery(ctx); err != nil {
+		return err
+	}
 
 	// Attempt to run the main service func and record error.
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- run(ctx, s)
-	}()
-
-	select {
-	case <-time.After(timeout):
-		return fmt.Errorf("startup deadline (%s) exceeded", timeout)
-	case err := <-errCh:
-		if err != nil {
-			return fmt.Errorf("error running service: %w", err)
-		}
+	if err := run(ctx, s); err != nil {
+		return fmt.Errorf("error running service: %w", err)
 	}
+
+	// Register service for discovery if enabled.
+	go s.RegisterDiscovery(ctx)
+
+	// Start the local http server.
+	go s.serveHTTP(ctx)
 
 	metrics.ServiceInfo.WithLabelValues(s.ID(), version.Build).Inc()
 	log.Info().Msg("service started")

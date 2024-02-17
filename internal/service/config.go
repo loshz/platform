@@ -6,7 +6,6 @@ import "github.com/loshz/platform/internal/config"
 // a service.
 func (s *Service) LoadRequiredConfig() {
 	s.Config().MustLoad(config.KeyServiceLogLevel, "info", config.ParseLogLevel)
-	s.Config().MustLoad(config.KeyServiceStartupTimeout, "10s", config.ParseDuration)
 	s.Config().MustLoad(config.KeyServiceShutdownTimeout, "10s", config.ParseDuration)
 	s.Config().MustLoad(config.KeyHTTPPort, 8001, config.ParseInt)
 }

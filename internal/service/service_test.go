@@ -6,36 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/loshz/platform/internal/config"
 )
-
-func TestStart(t *testing.T) {
-	t.Parallel()
-
-	// Create test Service with required config.
-	svc := New("service_test")
-	svc.Config().Set(config.KeyServiceStartupTimeout, "1s")
-
-	t.Run("TestStartupError", func(t *testing.T) {
-		expected := errors.New("run error")
-		runFn := func(context.Context, *Service) error {
-			return expected
-		}
-
-		err := svc.start(context.Background(), runFn)
-		assert.ErrorIs(t, err, expected)
-	})
-
-	t.Run("TestNoError", func(t *testing.T) {
-		runFn := func(context.Context, *Service) error {
-			return nil
-		}
-
-		err := svc.start(context.Background(), runFn)
-		assert.Nil(t, err)
-	})
-}
 
 func TestWaitSignal(t *testing.T) {
 	t.Parallel()

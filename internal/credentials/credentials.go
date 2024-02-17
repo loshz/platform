@@ -22,8 +22,6 @@ type Store struct {
 	}
 }
 
-func New() *Store { return &Store{} }
-
 func (s *Store) GrpcClient() grpc.TransportCredentials { return s.grpc.client }
 func (s *Store) GrpcServer() grpc.TransportCredentials { return s.grpc.server }
 

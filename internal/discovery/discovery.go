@@ -17,12 +17,12 @@ type Service struct {
 	client apiv1.DiscoveryServiceClient
 }
 
-func New(ctx context.Context, addr string, creds credentials.TransportCredentials) (*Service, error) {
+func (s *Service) Start(ctx context.Context, addr string, creds credentials.TransportCredentials) error {
 	conn, err := grpc.DialContext(ctx, addr, grpc.WithTransportCredentials(creds))
 	if err != nil {
-		return nil, fmt.Errorf("error dialing discovery service: %w", err)
+		return fmt.Errorf("error dialing discovery service: %w", err)
 	}
-	client := apiv1.NewDiscoveryServiceClient(conn)
+	s.client = apiv1.NewDiscoveryServiceClient(conn)
 
 	go func() {
 		<-ctx.Done()
@@ -31,9 +31,7 @@ func New(ctx context.Context, addr string, creds credentials.TransportCredential
 		_ = conn.Close()
 	}()
 
-	return &Service{
-		client,
-	}, nil
+	return nil
 }
 
 func (s *Service) Register(ctx context.Context, service *apiv1.Service) error {
