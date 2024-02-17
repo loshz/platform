@@ -13,6 +13,9 @@ import (
 	apiv1 "github.com/loshz/platform/internal/api/v1"
 )
 
+// DelimeterAll represents the delimiter for specifying all services.
+const DelimeterAll = "*"
+
 // MsgMissingRequiredField represents an error message format for
 // missing request fields.
 var MsgMissingRequiredField = "error: missing required '%s' field"
@@ -107,14 +110,17 @@ func (ds *DiscoveryServer) DeregisterService(_ context.Context, req *apiv1.Dereg
 
 // GetServices returns all currently registered services with a given prefix.
 func (ds *DiscoveryServer) GetServices(_ context.Context, req *apiv1.GetServicesRequest) (*apiv1.GetServicesResponse, error) {
-	services := []*apiv1.Service{}
 	name := req.GetName()
+	if name == "" {
+		return nil, status.Errorf(codes.InvalidArgument, MsgMissingRequiredField, "name")
+	}
 
 	ds.mtx.RLock()
 	defer ds.mtx.RUnlock()
 
+	var services []*apiv1.Service
 	for uuid, svc := range ds.services {
-		if name == "" || strings.HasPrefix(uuid, name) {
+		if name == DelimeterAll || strings.HasPrefix(uuid, name) {
 			services = append(services, svc)
 		}
 	}
