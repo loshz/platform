@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"fmt"
 	"time"
 
@@ -24,7 +26,11 @@ func main() {
 }
 
 func run(ctx context.Context, s *service.Service) error {
+	s.Scheduler().Add(1)
+
 	go func() {
+		defer s.Scheduler().Done()
+
 		// TODO: refactor this whole function to use periodic refresh and retries.
 		time.Sleep(10 * time.Second)
 
@@ -37,26 +43,40 @@ func run(ctx context.Context, s *service.Service) error {
 
 		// TODO: perform sanity check on returned eventd services.
 		eventd := fmt.Sprintf("%s:%d", svcs[0].Address, svcs[0].GrpcPort)
-		conn, err := grpc.Dial(eventd, grpc.WithTransportCredentials(s.Creds().GrpcClient()))
+		conn, err := grpc.DialContext(ctx, eventd, grpc.WithTransportCredentials(s.Creds().GrpcClient()))
 		if err != nil {
 			s.Error(fmt.Errorf("error dialing eventd: %w", err))
 			return
 		}
+		defer conn.Close()
+
 		client := apiv1.NewEventServiceClient(conn)
+		stream, err := client.Send(ctx)
+		if err != nil {
+			s.Error(fmt.Errorf("error getting stream: %w", err))
+			return
+		}
 
 		t := time.NewTicker(10 * time.Second)
 		for {
 			select {
 			case <-t.C:
-				res, err := client.Event(context.Background(), &apiv1.EventRequest{Hostname: "blah"})
-				if err != nil {
+				var buf bytes.Buffer
+				enc := gob.NewEncoder(&buf)
+				if err := enc.Encode(&apiv1.NetworkEvent{}); err != nil {
+					log.Error().Err(err).Msg("error serializing event data")
+					continue
+				}
+				req := &apiv1.SendRequest{
+					Type: apiv1.EventType_EVENT_TYPE_NETWORK,
+					Data: buf.Bytes(),
+				}
+				if err := stream.Send(req); err != nil {
 					log.Error().Err(err).Msg("error making request to eventd")
 					continue
 				}
-
-				log.Info().Msgf("eventd response: %s", res.Uuid)
 			case <-ctx.Done():
-				conn.Close()
+				_, _ = stream.CloseAndRecv()
 				return
 			}
 		}

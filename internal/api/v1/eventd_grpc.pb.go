@@ -19,15 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	EventService_Event_FullMethodName = "/proto.v1.EventService/Event"
+	EventService_Send_FullMethodName = "/proto.v1.EventService/Send"
 )
 
 // EventServiceClient is the client API for EventService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EventServiceClient interface {
-	// Event takes host level events.
-	Event(ctx context.Context, in *EventRequest, opts ...grpc.CallOption) (*EventResponse, error)
+	Send(ctx context.Context, opts ...grpc.CallOption) (EventService_SendClient, error)
 }
 
 type eventServiceClient struct {
@@ -38,21 +37,45 @@ func NewEventServiceClient(cc grpc.ClientConnInterface) EventServiceClient {
 	return &eventServiceClient{cc}
 }
 
-func (c *eventServiceClient) Event(ctx context.Context, in *EventRequest, opts ...grpc.CallOption) (*EventResponse, error) {
-	out := new(EventResponse)
-	err := c.cc.Invoke(ctx, EventService_Event_FullMethodName, in, out, opts...)
+func (c *eventServiceClient) Send(ctx context.Context, opts ...grpc.CallOption) (EventService_SendClient, error) {
+	stream, err := c.cc.NewStream(ctx, &EventService_ServiceDesc.Streams[0], EventService_Send_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &eventServiceSendClient{stream}
+	return x, nil
+}
+
+type EventService_SendClient interface {
+	Send(*SendRequest) error
+	CloseAndRecv() (*SendResponse, error)
+	grpc.ClientStream
+}
+
+type eventServiceSendClient struct {
+	grpc.ClientStream
+}
+
+func (x *eventServiceSendClient) Send(m *SendRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *eventServiceSendClient) CloseAndRecv() (*SendResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(SendResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // EventServiceServer is the server API for EventService service.
 // All implementations must embed UnimplementedEventServiceServer
 // for forward compatibility
 type EventServiceServer interface {
-	// Event takes host level events.
-	Event(context.Context, *EventRequest) (*EventResponse, error)
+	Send(EventService_SendServer) error
 	mustEmbedUnimplementedEventServiceServer()
 }
 
@@ -60,8 +83,8 @@ type EventServiceServer interface {
 type UnimplementedEventServiceServer struct {
 }
 
-func (UnimplementedEventServiceServer) Event(context.Context, *EventRequest) (*EventResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Event not implemented")
+func (UnimplementedEventServiceServer) Send(EventService_SendServer) error {
+	return status.Errorf(codes.Unimplemented, "method Send not implemented")
 }
 func (UnimplementedEventServiceServer) mustEmbedUnimplementedEventServiceServer() {}
 
@@ -76,22 +99,30 @@ func RegisterEventServiceServer(s grpc.ServiceRegistrar, srv EventServiceServer)
 	s.RegisterService(&EventService_ServiceDesc, srv)
 }
 
-func _EventService_Event_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(EventRequest)
-	if err := dec(in); err != nil {
+func _EventService_Send_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(EventServiceServer).Send(&eventServiceSendServer{stream})
+}
+
+type EventService_SendServer interface {
+	SendAndClose(*SendResponse) error
+	Recv() (*SendRequest, error)
+	grpc.ServerStream
+}
+
+type eventServiceSendServer struct {
+	grpc.ServerStream
+}
+
+func (x *eventServiceSendServer) SendAndClose(m *SendResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *eventServiceSendServer) Recv() (*SendRequest, error) {
+	m := new(SendRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
-	if interceptor == nil {
-		return srv.(EventServiceServer).Event(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: EventService_Event_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EventServiceServer).Event(ctx, req.(*EventRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return m, nil
 }
 
 // EventService_ServiceDesc is the grpc.ServiceDesc for EventService service.
@@ -100,12 +131,13 @@ func _EventService_Event_Handler(srv interface{}, ctx context.Context, dec func(
 var EventService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.v1.EventService",
 	HandlerType: (*EventServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "Event",
-			Handler:    _EventService_Event_Handler,
+			StreamName:    "Send",
+			Handler:       _EventService_Send_Handler,
+			ClientStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "proto/v1/eventd.proto",
 }

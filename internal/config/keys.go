@@ -24,6 +24,7 @@ const (
 	KeyGRPCServerConnTimeout = "grpc.server.conn.timeout"
 
 	// gRPC client config.
-	KeyGRPCClientCert = "grpc.client.cert"
-	KeyGRPCClientKey  = "grpc.client.key"
+	KeyGRPCClientCert    = "grpc.client.cert"
+	KeyGRPCClientKey     = "grpc.client.key"
+	KeyGRPCClientTimeout = "grpc.client.timeout"
 )
