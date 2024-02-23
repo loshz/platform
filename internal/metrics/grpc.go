@@ -5,8 +5,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-// GRPCRequestsTotal represents the total number of gRPC requests.
-var GRPCRequestsTotal = promauto.NewCounterVec(
+// GrpcRequestsTotal represents the total number of gRPC requests.
+var GrpcRequestsTotal = promauto.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: Namespace,
 		Name:      "grpc_requests_total",
@@ -15,8 +15,8 @@ var GRPCRequestsTotal = promauto.NewCounterVec(
 	[]string{"service_id", "code", "method", "type"},
 )
 
-// GRPCRequestDuration represents the duration of gRPC requests in seconds.
-var GRPCRequestDuration = promauto.NewHistogramVec(
+// GrpcRequestDuration represents the duration of gRPC requests in seconds.
+var GrpcRequestDuration = promauto.NewHistogramVec(
 	prometheus.HistogramOpts{
 		Namespace: Namespace,
 		Name:      "grpc_request_duration_seconds",

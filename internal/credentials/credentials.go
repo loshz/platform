@@ -27,7 +27,7 @@ func (s *Store) GrpcServer() grpc.TransportCredentials { return s.grpc.server }
 
 func (s *Store) LoadGrpcClientCreds(c *config.Config) error {
 	// Load TLS credentials.
-	ca := c.String(config.KeyGrpcTLSCA)
+	ca := c.String(config.KeyGrpcTlsCA)
 	cert := c.String(config.KeyGrpcClientCert)
 	key := c.String(config.KeyGrpcClientKey)
 
@@ -43,7 +43,7 @@ func (s *Store) LoadGrpcClientCreds(c *config.Config) error {
 
 func (s *Store) LoadGrpcServerCreds(c *config.Config) error {
 	// Load TLS credentials.
-	ca := c.String(config.KeyGrpcTLSCA)
+	ca := c.String(config.KeyGrpcTlsCA)
 	cert := c.String(config.KeyGrpcServerCert)
 	key := c.String(config.KeyGrpcServerKey)
 
