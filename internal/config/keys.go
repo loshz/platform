@@ -9,21 +9,22 @@ const (
 	KeyServiceRegisterInt      = "service.register.interval"
 
 	// HTTPS/S server config.
-	KeyHTTPPort         = "http.port"
-	KeyHTTPReadTimeout  = "http.read.timeout"
-	KeyHTTPWriteTimeout = "http.write.timeout"
-	KeyHTTPIdleTimeout  = "http.idle.timeout"
+	KeyHttpPort         = "http.port"
+	KeyHttpReadTimeout  = "http.read.timeout"
+	KeyHttpWriteTimeout = "http.write.timeout"
+	KeyHttpIdleTimeout  = "http.idle.timeout"
 
 	// gRPC TLS config.
-	KeyGRPCTLSCA = "grpc.tls.ca"
+	KeyGrpcTLSCA = "grpc.tls.ca"
 
 	// gRPC server config.
-	KeyGRPCServerPort        = "grpc.server.port"
-	KeyGRPCServerCert        = "grpc.server.cert"
-	KeyGRPCServerKey         = "grpc.server.key"
-	KeyGRPCServerConnTimeout = "grpc.server.conn.timeout"
+	KeyGrpcServerPort        = "grpc.server.port"
+	KeyGrpcServerCert        = "grpc.server.cert"
+	KeyGrpcServerKey         = "grpc.server.key"
+	KeyGrpcServerConnTimeout = "grpc.server.conn.timeout"
 
 	// gRPC client config.
-	KeyGRPCClientCert = "grpc.client.cert"
-	KeyGRPCClientKey  = "grpc.client.key"
+	KeyGrpcClientCert    = "grpc.client.cert"
+	KeyGrpcClientKey     = "grpc.client.key"
+	KeyGrpcClientTimeout = "grpc.client.timeout"
 )
