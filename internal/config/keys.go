@@ -15,7 +15,7 @@ const (
 	KeyHttpIdleTimeout  = "http.idle.timeout"
 
 	// gRPC TLS config.
-	KeyGrpcTLSCA = "grpc.tls.ca"
+	KeyGrpcTlsCA = "grpc.tls.ca"
 
 	// gRPC server config.
 	KeyGrpcServerPort        = "grpc.server.port"

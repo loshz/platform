@@ -25,8 +25,8 @@ func StreamInterceptor(service_id string) grpc.StreamServerInterceptor {
 
 		// Record request metrics.
 		labels := []string{service_id, code.String(), info.FullMethod, "stream"}
-		metrics.GRPCRequestDuration.WithLabelValues(labels...).Observe(latency.Seconds())
-		metrics.GRPCRequestsTotal.WithLabelValues(labels...).Inc()
+		metrics.GrpcRequestDuration.WithLabelValues(labels...).Observe(latency.Seconds())
+		metrics.GrpcRequestsTotal.WithLabelValues(labels...).Inc()
 
 		return err
 	}
@@ -44,8 +44,8 @@ func UnaryInterceptor(service_id string) grpc.UnaryServerInterceptor {
 
 		// Record request metrics.
 		labels := []string{service_id, code.String(), info.FullMethod, "unary"}
-		metrics.GRPCRequestDuration.WithLabelValues(labels...).Observe(latency.Seconds())
-		metrics.GRPCRequestsTotal.WithLabelValues(labels...).Inc()
+		metrics.GrpcRequestDuration.WithLabelValues(labels...).Observe(latency.Seconds())
+		metrics.GrpcRequestsTotal.WithLabelValues(labels...).Inc()
 
 		return res, err
 	}

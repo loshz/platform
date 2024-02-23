@@ -1,7 +1,7 @@
 package main
 
 import (
-	"context"
+	"io"
 
 	"github.com/rs/zerolog/log"
 
@@ -12,10 +12,17 @@ type grpcServer struct {
 	apiv1.UnimplementedEventServiceServer
 }
 
-func (s *grpcServer) Event(ctx context.Context, req *apiv1.EventRequest) (*apiv1.EventResponse, error) {
-	log.Info().Str("hostname", req.Hostname).Msg("request received")
+func (s *grpcServer) Send(stream apiv1.EventService_SendServer) error {
+	for {
+		event, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+		log.Info().Msgf("event received, type: %s", event.Type)
+	}
 
-	return &apiv1.EventResponse{
-		Uuid: "test",
-	}, nil
+	return stream.SendAndClose(&apiv1.SendResponse{})
 }
