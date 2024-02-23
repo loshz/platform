@@ -21,7 +21,7 @@ func (s *Service) serveHTTP(ctx context.Context) {
 	s.Scheduler().Add(1)
 	defer s.Scheduler().Done()
 
-	port := fmt.Sprintf(":%d", s.Config().Int(config.KeyHTTPPort))
+	port := fmt.Sprintf(":%d", s.Config().Int(config.KeyHttpPort))
 	router := http.NewServeMux()
 
 	// Configure debug endpoints.

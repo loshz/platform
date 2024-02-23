@@ -46,8 +46,8 @@ func (s *Service) RegisterDiscovery(ctx context.Context) {
 
 	// Get service details from config.
 	interval := s.Config().Duration(config.KeyServiceRegisterInt)
-	httpPort := s.Config().Uint(config.KeyHTTPPort)
-	grpcPort := s.Config().Uint(config.KeyGRPCServerPort)
+	httpPort := s.Config().Uint(config.KeyHttpPort)
+	grpcPort := s.Config().Uint(config.KeyGrpcServerPort)
 
 	// Keep track of failed retries.
 	retries := 0
