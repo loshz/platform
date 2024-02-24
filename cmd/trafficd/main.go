@@ -51,6 +51,21 @@ func run(ctx context.Context, s *service.Service) error {
 		defer conn.Close()
 
 		client := apiv1.NewEventServiceClient(conn)
+
+		// Register the machine details before sending events.
+		req := &apiv1.RegisterHostRequest{
+			Host: &apiv1.Host{
+				MachineId: "blah",
+				Hostname:  "p14s",
+			},
+			Timestamp: time.Now().Unix(),
+		}
+		if _, err := client.RegisterHost(ctx, req); err != nil {
+			s.Error(fmt.Errorf("error registering machine: %w", err))
+			return
+		}
+
+		// Initiate stream and start sending events.
 		stream, err := client.SendEvent(ctx)
 		if err != nil {
 			s.Error(fmt.Errorf("error getting stream: %w", err))
@@ -68,11 +83,12 @@ func run(ctx context.Context, s *service.Service) error {
 					continue
 				}
 				req := &apiv1.SendEventRequest{
-					Type: apiv1.EventType_EVENT_TYPE_NETWORK,
-					Data: buf.Bytes(),
+					Type:      apiv1.EventType_EVENT_TYPE_NETWORK,
+					MachineId: "p14s",
+					Data:      buf.Bytes(),
 				}
 				if err := stream.Send(req); err != nil {
-					log.Error().Err(err).Msg("error making request to eventd")
+					log.Error().Err(err).Msg("error sending event")
 					continue
 				}
 			case <-ctx.Done():

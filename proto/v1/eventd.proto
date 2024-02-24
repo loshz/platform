@@ -17,7 +17,7 @@ message Host {
 
 message RegisterHostRequest {
   Host host = 1;
-  uint64 timestamp = 2;
+  int64 timestamp = 2;
 }
 
 message RegisterHostResponse {}

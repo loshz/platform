@@ -21,7 +21,7 @@ func (s *Service) LoadDiscoveryConfig() {
 // server config.
 func (s *Service) LoadGrpcServerConfig() {
 	s.Config().MustLoad(config.KeyGrpcTlsCA, "/usr/local/share/ca-certificates/ca.crt.pem", config.ParseString)
-	s.Config().MustLoad(config.KeyGrpcServerPort, 8002, config.ParseInt)
+	s.Config().MustLoad(config.KeyGrpcServerPort, 0, config.ParseInt)
 	s.Config().MustLoad(config.KeyGrpcServerCert, "/usr/local/share/ca-certificates/server.crt.pem", config.ParseString)
 	s.Config().MustLoad(config.KeyGrpcServerKey, "/usr/local/share/ca-certificates/server.key.pem", config.ParseString)
 	s.Config().MustLoad(config.KeyGrpcServerConnTimeout, "10s", config.ParseDuration)
