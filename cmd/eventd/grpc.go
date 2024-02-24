@@ -33,7 +33,7 @@ func (s *grpcServer) RegisterHost(_ context.Context, req *apiv1.RegisterHostRequ
 	return &apiv1.RegisterHostResponse{}, nil
 }
 
-func (s *grpcServer) Send(stream apiv1.EventService_SendEventServer) error {
+func (s *grpcServer) SendEvent(stream apiv1.EventService_SendEventServer) error {
 	for {
 		event, err := stream.Recv()
 		if err != nil {
