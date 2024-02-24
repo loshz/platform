@@ -12,7 +12,7 @@ func TestLoadRequiredConfig(t *testing.T) {
 	// Set required env vars.
 	t.Setenv("PLAT_SERVICE_LOG_LEVEL", "debug")
 	t.Setenv("PLAT_SERVICE_SHUTDOWN_TIMEOUT", "20s")
-	t.Setenv("PLAT_HTTP_PORT", "8888")
+	t.Setenv("PLAT_HTTP_SERVER_PORT", "8888")
 
 	// Create a new service and load required config.
 	s := New("required")
@@ -21,7 +21,7 @@ func TestLoadRequiredConfig(t *testing.T) {
 	// Assert loaded config is as expected.
 	assert.Equal(t, s.Config().Get(config.KeyServiceLogLevel), "debug")
 	assert.Equal(t, s.Config().Get(config.KeyServiceShutdownTimeout), "20s")
-	assert.Equal(t, s.Config().Get(config.KeyHttpPort), "8888")
+	assert.Equal(t, s.Config().Get(config.KeyHttpServerPort), "8888")
 }
 
 func TestLoadDiscoveryConfig(t *testing.T) {

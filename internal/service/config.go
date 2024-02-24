@@ -7,7 +7,7 @@ import "github.com/loshz/platform/internal/config"
 func (s *Service) LoadRequiredConfig() {
 	s.Config().MustLoad(config.KeyServiceLogLevel, "info", config.ParseLogLevel)
 	s.Config().MustLoad(config.KeyServiceShutdownTimeout, "10s", config.ParseDuration)
-	s.Config().MustLoad(config.KeyHttpPort, 8001, config.ParseInt)
+	s.Config().MustLoad(config.KeyHttpServerPort, 0, config.ParseInt)
 }
 
 // LoadDiscoveryConfig is a helper function for loading service discovery config.
