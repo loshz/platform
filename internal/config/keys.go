@@ -9,7 +9,7 @@ const (
 	KeyServiceRegisterInt      = "service.register.interval"
 
 	// HTTPS/S server config.
-	KeyHttpPort         = "http.port"
+	KeyHttpServerPort   = "http.server.port"
 	KeyHttpReadTimeout  = "http.read.timeout"
 	KeyHttpWriteTimeout = "http.write.timeout"
 	KeyHttpIdleTimeout  = "http.idle.timeout"

@@ -162,11 +162,11 @@ func (s *Service) start(ctx context.Context, run RunFunc) error {
 		return fmt.Errorf("error running service: %w", err)
 	}
 
-	// Register service for discovery if enabled.
-	go s.RegisterDiscovery(ctx)
-
 	// Start the local http server.
 	go s.serveHTTP(ctx)
+
+	// Register service for discovery if enabled.
+	go s.RegisterDiscovery(ctx)
 
 	metrics.ServiceInfo.WithLabelValues(s.ID(), version.Build).Inc()
 	log.Info().Msg("service started")

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/pprof"
 	"time"
@@ -21,7 +22,6 @@ func (s *Service) serveHTTP(ctx context.Context) {
 	s.Scheduler().Add(1)
 	defer s.Scheduler().Done()
 
-	port := fmt.Sprintf(":%d", s.Config().Int(config.KeyHttpPort))
 	router := http.NewServeMux()
 
 	// Configure debug endpoints.
@@ -47,16 +47,28 @@ func (s *Service) serveHTTP(ctx context.Context) {
 		}
 	})
 
+	// Configure HTTP server with sane defaults.
+	timeout := 10 * time.Second
 	srv := &http.Server{
-		Addr:         port,
-		Handler:      router,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		Handler:           router,
+		ReadTimeout:       timeout,
+		ReadHeaderTimeout: timeout,
+		WriteTimeout:      timeout,
+		IdleTimeout:       timeout,
 	}
 
 	go func() {
-		log.Info().Msgf("local http server running on %s", port)
-		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		ln, err := net.Listen("tcp", fmt.Sprintf(":%d", s.Config().Int(config.KeyHttpServerPort)))
+		if err != nil {
+			s.Error(fmt.Errorf("http server tcp error: %w", err))
+			return
+		}
+
+		// Update config with the actual tcp listener port.
+		s.Config().Set(config.KeyHttpServerPort, ln.Addr().(*net.TCPAddr).Port)
+
+		log.Info().Msgf("http server running on %s", ln.Addr())
+		if err := srv.Serve(ln); err != http.ErrServerClosed {
 			s.Error(fmt.Errorf("local http server error: %w", err))
 			return
 		}
