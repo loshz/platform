@@ -51,7 +51,7 @@ func run(ctx context.Context, s *service.Service) error {
 		defer conn.Close()
 
 		client := apiv1.NewEventServiceClient(conn)
-		stream, err := client.Send(ctx)
+		stream, err := client.SendEvent(ctx)
 		if err != nil {
 			s.Error(fmt.Errorf("error getting stream: %w", err))
 			return
@@ -67,7 +67,7 @@ func run(ctx context.Context, s *service.Service) error {
 					log.Error().Err(err).Msg("error serializing event data")
 					continue
 				}
-				req := &apiv1.SendRequest{
+				req := &apiv1.SendEventRequest{
 					Type: apiv1.EventType_EVENT_TYPE_NETWORK,
 					Data: buf.Bytes(),
 				}

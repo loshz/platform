@@ -6,20 +6,34 @@ option go_package = "github.com/loshz/platform/internal/api/v1;apiv1";
 
 // EventService takes host level events.
 service EventService {
-  rpc Send(stream SendRequest) returns (SendResponse) {}
+  rpc RegisterHost(RegisterHostRequest) returns (RegisterHostResponse) {}
+  rpc SendEvent(stream SendEventRequest) returns (SendEventResponse) {}
 }
+
+message Host {
+  string machine_id = 1;
+  string hostname = 2;
+}
+
+message RegisterHostRequest {
+  Host host = 1;
+  uint64 timestamp = 2;
+}
+
+message RegisterHostResponse {}
 
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
   EVENT_TYPE_NETWORK = 1;
 }
 
-message SendRequest {
+message SendEventRequest {
   EventType type = 1;
-  bytes data = 2;
+  string machine_id = 2;
+  bytes data = 3;
 }
 
-message SendResponse {}
+message SendEventResponse {}
 
 enum NetworkTransport {
   NETWORK_TRANSPORT_UNSPECIFIED = 0;

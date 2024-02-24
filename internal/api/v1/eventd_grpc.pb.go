@@ -19,14 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	EventService_Send_FullMethodName = "/proto.v1.EventService/Send"
+	EventService_RegisterHost_FullMethodName = "/proto.v1.EventService/RegisterHost"
+	EventService_SendEvent_FullMethodName    = "/proto.v1.EventService/SendEvent"
 )
 
 // EventServiceClient is the client API for EventService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EventServiceClient interface {
-	Send(ctx context.Context, opts ...grpc.CallOption) (EventService_SendClient, error)
+	RegisterHost(ctx context.Context, in *RegisterHostRequest, opts ...grpc.CallOption) (*RegisterHostResponse, error)
+	SendEvent(ctx context.Context, opts ...grpc.CallOption) (EventService_SendEventClient, error)
 }
 
 type eventServiceClient struct {
@@ -37,34 +39,43 @@ func NewEventServiceClient(cc grpc.ClientConnInterface) EventServiceClient {
 	return &eventServiceClient{cc}
 }
 
-func (c *eventServiceClient) Send(ctx context.Context, opts ...grpc.CallOption) (EventService_SendClient, error) {
-	stream, err := c.cc.NewStream(ctx, &EventService_ServiceDesc.Streams[0], EventService_Send_FullMethodName, opts...)
+func (c *eventServiceClient) RegisterHost(ctx context.Context, in *RegisterHostRequest, opts ...grpc.CallOption) (*RegisterHostResponse, error) {
+	out := new(RegisterHostResponse)
+	err := c.cc.Invoke(ctx, EventService_RegisterHost_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &eventServiceSendClient{stream}
+	return out, nil
+}
+
+func (c *eventServiceClient) SendEvent(ctx context.Context, opts ...grpc.CallOption) (EventService_SendEventClient, error) {
+	stream, err := c.cc.NewStream(ctx, &EventService_ServiceDesc.Streams[0], EventService_SendEvent_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &eventServiceSendEventClient{stream}
 	return x, nil
 }
 
-type EventService_SendClient interface {
-	Send(*SendRequest) error
-	CloseAndRecv() (*SendResponse, error)
+type EventService_SendEventClient interface {
+	Send(*SendEventRequest) error
+	CloseAndRecv() (*SendEventResponse, error)
 	grpc.ClientStream
 }
 
-type eventServiceSendClient struct {
+type eventServiceSendEventClient struct {
 	grpc.ClientStream
 }
 
-func (x *eventServiceSendClient) Send(m *SendRequest) error {
+func (x *eventServiceSendEventClient) Send(m *SendEventRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *eventServiceSendClient) CloseAndRecv() (*SendResponse, error) {
+func (x *eventServiceSendEventClient) CloseAndRecv() (*SendEventResponse, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(SendResponse)
+	m := new(SendEventResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -75,7 +86,8 @@ func (x *eventServiceSendClient) CloseAndRecv() (*SendResponse, error) {
 // All implementations must embed UnimplementedEventServiceServer
 // for forward compatibility
 type EventServiceServer interface {
-	Send(EventService_SendServer) error
+	RegisterHost(context.Context, *RegisterHostRequest) (*RegisterHostResponse, error)
+	SendEvent(EventService_SendEventServer) error
 	mustEmbedUnimplementedEventServiceServer()
 }
 
@@ -83,8 +95,11 @@ type EventServiceServer interface {
 type UnimplementedEventServiceServer struct {
 }
 
-func (UnimplementedEventServiceServer) Send(EventService_SendServer) error {
-	return status.Errorf(codes.Unimplemented, "method Send not implemented")
+func (UnimplementedEventServiceServer) RegisterHost(context.Context, *RegisterHostRequest) (*RegisterHostResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterHost not implemented")
+}
+func (UnimplementedEventServiceServer) SendEvent(EventService_SendEventServer) error {
+	return status.Errorf(codes.Unimplemented, "method SendEvent not implemented")
 }
 func (UnimplementedEventServiceServer) mustEmbedUnimplementedEventServiceServer() {}
 
@@ -99,26 +114,44 @@ func RegisterEventServiceServer(s grpc.ServiceRegistrar, srv EventServiceServer)
 	s.RegisterService(&EventService_ServiceDesc, srv)
 }
 
-func _EventService_Send_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(EventServiceServer).Send(&eventServiceSendServer{stream})
+func _EventService_RegisterHost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterHostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EventServiceServer).RegisterHost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EventService_RegisterHost_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EventServiceServer).RegisterHost(ctx, req.(*RegisterHostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-type EventService_SendServer interface {
-	SendAndClose(*SendResponse) error
-	Recv() (*SendRequest, error)
+func _EventService_SendEvent_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(EventServiceServer).SendEvent(&eventServiceSendEventServer{stream})
+}
+
+type EventService_SendEventServer interface {
+	SendAndClose(*SendEventResponse) error
+	Recv() (*SendEventRequest, error)
 	grpc.ServerStream
 }
 
-type eventServiceSendServer struct {
+type eventServiceSendEventServer struct {
 	grpc.ServerStream
 }
 
-func (x *eventServiceSendServer) SendAndClose(m *SendResponse) error {
+func (x *eventServiceSendEventServer) SendAndClose(m *SendEventResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *eventServiceSendServer) Recv() (*SendRequest, error) {
-	m := new(SendRequest)
+func (x *eventServiceSendEventServer) Recv() (*SendEventRequest, error) {
+	m := new(SendEventRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -131,11 +164,16 @@ func (x *eventServiceSendServer) Recv() (*SendRequest, error) {
 var EventService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.v1.EventService",
 	HandlerType: (*EventServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "RegisterHost",
+			Handler:    _EventService_RegisterHost_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "Send",
-			Handler:       _EventService_Send_Handler,
+			StreamName:    "SendEvent",
+			Handler:       _EventService_SendEvent_Handler,
 			ClientStreams: true,
 		},
 	},
