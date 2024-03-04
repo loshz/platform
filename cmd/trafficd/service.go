@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/gob"
 	"fmt"
 	"net/url"
@@ -21,14 +22,18 @@ type Trafficd struct {
 
 func NewTrafficd() (*Trafficd, error) {
 	// Get machine id.
-	// TODO: this should be treated as sensitive and hashed/encrypted.
 	b, err := os.ReadFile("/etc/machine-id")
 	if err != nil {
 		return nil, err
 	}
 
+	// NOTE: machine id should be treated as sensitive, so we hash the value.
+	h := sha256.New()
+	h.Write(b)
+	bs := h.Sum(nil)
+
 	return &Trafficd{
-		MachineId: string(b),
+		MachineId: string(bs),
 	}, nil
 }
 
