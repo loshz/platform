@@ -30,10 +30,14 @@ func (s *grpcServer) RegisterHost(_ context.Context, req *apiv1.RegisterHostRequ
 
 	log.Info().Str("machine_id", machineId).Msg("machine registered")
 
-	return &apiv1.RegisterHostResponse{}, nil
+	return &apiv1.RegisterHostResponse{
+		MachineId: machineId,
+	}, nil
 }
 
 func (s *grpcServer) SendEvent(stream apiv1.EventService_SendEventServer) error {
+	res := new(apiv1.SendEventResponse)
+
 	for {
 		event, err := stream.Recv()
 		if err != nil {
@@ -42,8 +46,11 @@ func (s *grpcServer) SendEvent(stream apiv1.EventService_SendEventServer) error 
 			}
 			return err
 		}
-		log.Info().Msgf("event received, type: %s", event.Type)
+
+		log.Debug().Msgf("event received, type: %s", event.Type)
+		EventsTotal.WithLabelValues(event.Type.String()).Inc()
+		res.EventsTotal++
 	}
 
-	return stream.SendAndClose(&apiv1.SendEventResponse{})
+	return stream.SendAndClose(res)
 }

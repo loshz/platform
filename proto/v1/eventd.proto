@@ -20,7 +20,9 @@ message RegisterHostRequest {
   int64 timestamp = 2;
 }
 
-message RegisterHostResponse {}
+message RegisterHostResponse {
+  string machine_id = 1;
+}
 
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
@@ -33,7 +35,9 @@ message SendEventRequest {
   bytes data = 3;
 }
 
-message SendEventResponse {}
+message SendEventResponse {
+  uint64 events_total = 1;
+}
 
 enum NetworkTransport {
   NETWORK_TRANSPORT_UNSPECIFIED = 0;

@@ -12,8 +12,10 @@ import (
 	"github.com/loshz/platform/internal/service"
 )
 
+const serviceName = "eventd"
+
 func main() {
-	s := service.New("eventd")
+	s := service.New(serviceName)
 
 	// Load required service credentials and dependencies before startup.
 	s.LoadCredentials(credentials.GrpcClient, credentials.GrpcServer)
@@ -33,7 +35,7 @@ func run(ctx context.Context, s *service.Service) error {
 
 	// Create a gRPC server and register the service.
 	grpcSrv := pgrpc.NewServer(opts)
-	grpcSrv.RegisterService(&apiv1.EventService_ServiceDesc, &grpcServer{})
+	grpcSrv.RegisterService(&apiv1.EventService_ServiceDesc, new(grpcServer))
 
 	// Start the gRPC server in the background.
 	go s.ServeGRPC(ctx, grpcSrv)
