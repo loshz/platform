@@ -47,7 +47,7 @@ func (s *grpcServer) SendEvent(stream apiv1.EventService_SendEventServer) error 
 			return err
 		}
 
-		log.Debug().Msgf("event received, type: %s", event.Type)
+		log.Info().Msgf("event received, type: %s", event.Type)
 		EventsTotal.WithLabelValues(event.Type.String()).Inc()
 		res.EventsTotal++
 	}

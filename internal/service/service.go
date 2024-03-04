@@ -70,13 +70,13 @@ func New(name string) *Service {
 }
 
 // Service getter methods.
-func (s *Service) Config() *config.Config        { return s.conf }
-func (s *Service) Creds() *credentials.Store     { return s.creds }
-func (s *Service) Discovery() *discovery.Service { return s.ds }
-func (s *Service) ID() string                    { return s.id.String() }
-func (s *Service) IsLeader() bool                { return s.leader.Load() }
-func (s *Service) Name() string                  { return s.id.Name() }
-func (s *Service) Scheduler() *sync.WaitGroup    { return s.wg }
+func (s *Service) Config() *config.Config                 { return s.conf }
+func (s *Service) Creds() *credentials.Store              { return s.creds }
+func (s *Service) Discovery() discovery.ServiceDiscoverer { return s.ds }
+func (s *Service) ID() string                             { return s.id.String() }
+func (s *Service) IsLeader() bool                         { return s.leader.Load() }
+func (s *Service) Name() string                           { return s.id.Name() }
+func (s *Service) Scheduler() *sync.WaitGroup             { return s.wg }
 
 // Run starts the Service and ensures all dependencies are initialised.
 //

@@ -26,7 +26,7 @@ func (s *Service) StartDiscovery(ctx context.Context) error {
 	}
 
 	// Start the discovery service with given credentials.
-	return s.Discovery().Start(ctx, s.Config().String(config.KeyServiceDiscoveryAddr), s.Creds().GrpcClient())
+	return s.ds.Start(ctx, s.Config().String(config.KeyServiceDiscoveryAddr), s.Creds().GrpcClient())
 }
 
 // RegisterDiscovery attempts to periodically register a service with the discovery service.

@@ -1,13 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/gob"
 	"fmt"
 	"time"
 
-	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 
 	apiv1 "github.com/loshz/platform/internal/api/v1"
@@ -34,67 +31,33 @@ func run(ctx context.Context, s *service.Service) error {
 		// TODO: refactor this whole function to use periodic refresh and retries.
 		time.Sleep(10 * time.Second)
 
+		trf := new(Trafficd)
+
 		// Get eventd address.
-		svcs, err := s.Discovery().Lookup(context.Background(), "eventd")
+		eventd, err := trf.GetEventdAddr(s.Discovery())
 		if err != nil {
 			s.Error(fmt.Errorf("error getting eventd service details from discovery: %w", err))
 			return
 		}
 
-		// TODO: perform sanity check on returned eventd services.
-		eventd := fmt.Sprintf("%s:%d", svcs[0].Address, svcs[0].GrpcPort)
-		conn, err := grpc.DialContext(ctx, eventd, grpc.WithTransportCredentials(s.Creds().GrpcClient()))
+		conn, err := grpc.DialContext(ctx, eventd.String(), grpc.WithTransportCredentials(s.Creds().GrpcClient()))
 		if err != nil {
 			s.Error(fmt.Errorf("error dialing eventd: %w", err))
 			return
 		}
 		defer conn.Close()
-
 		client := apiv1.NewEventServiceClient(conn)
 
 		// Register the machine details before sending events.
-		req := &apiv1.RegisterHostRequest{
-			Host: &apiv1.Host{
-				MachineId: "blah",
-				Hostname:  "p14s",
-			},
-			Timestamp: time.Now().Unix(),
-		}
-		if _, err := client.RegisterHost(ctx, req); err != nil {
+		if err := trf.RegisterHost(ctx, client); err != nil {
 			s.Error(fmt.Errorf("error registering machine: %w", err))
 			return
 		}
 
 		// Initiate stream and start sending events.
-		stream, err := client.SendEvent(ctx)
-		if err != nil {
-			s.Error(fmt.Errorf("error getting stream: %w", err))
+		if err := trf.StreamEvents(ctx, client); err != nil {
+			s.Error(fmt.Errorf("error streaming events: %w", err))
 			return
-		}
-
-		t := time.NewTicker(10 * time.Second)
-		for {
-			select {
-			case <-t.C:
-				var buf bytes.Buffer
-				enc := gob.NewEncoder(&buf)
-				if err := enc.Encode(&apiv1.NetworkEvent{}); err != nil {
-					log.Error().Err(err).Msg("error serializing event data")
-					continue
-				}
-				req := &apiv1.SendEventRequest{
-					Type:      apiv1.EventType_EVENT_TYPE_NETWORK,
-					MachineId: "p14s",
-					Data:      buf.Bytes(),
-				}
-				if err := stream.Send(req); err != nil {
-					log.Error().Err(err).Msg("error sending event")
-					continue
-				}
-			case <-ctx.Done():
-				_, _ = stream.CloseAndRecv()
-				return
-			}
 		}
 	}()
 
