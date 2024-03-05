@@ -29,9 +29,13 @@ func run(ctx context.Context, s *service.Service) error {
 		defer s.Scheduler().Done()
 
 		// TODO: refactor this whole function to use periodic refresh and retries.
-		time.Sleep(10 * time.Second)
+		time.Sleep(5 * time.Second)
 
-		trf := new(Trafficd)
+		trf, err := NewTrafficd()
+		if err != nil {
+			s.Error(fmt.Errorf("error initializing traffic service: %w", err))
+			return
+		}
 
 		// Get eventd address.
 		eventd, err := trf.GetEventdAddr(s.Discovery())

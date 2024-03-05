@@ -30,13 +30,14 @@ enum EventType {
 }
 
 message SendEventRequest {
-  EventType type = 1;
-  string machine_id = 2;
+  string machine_id = 1;
+  EventType type = 2;
   bytes data = 3;
 }
 
 message SendEventResponse {
-  uint64 events_total = 1;
+  string machine_id = 1;
+  uint64 events_total = 2;
 }
 
 enum NetworkTransport {

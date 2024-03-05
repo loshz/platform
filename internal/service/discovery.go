@@ -41,7 +41,7 @@ func (s *Service) RegisterDiscovery(ctx context.Context) {
 
 	// Create a timer with a small initial tick to allow service processes to start
 	// before registering for discovery.
-	t := time.NewTimer(5 * time.Second)
+	t := time.NewTimer(3 * time.Second)
 	defer t.Stop()
 
 	// Get service details from config.

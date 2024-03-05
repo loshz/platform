@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/gob"
+	"encoding/hex"
 	"fmt"
 	"net/url"
 	"os"
@@ -27,13 +28,14 @@ func NewTrafficd() (*Trafficd, error) {
 		return nil, err
 	}
 
-	// NOTE: machine id should be treated as sensitive, so we hash the value.
+	// NOTE: machine id should be treated as sensitive data and therefore hashed.
+	// https://man7.org/linux/man-pages/man5/machine-id.5.html
 	h := sha256.New()
 	h.Write(b)
 	bs := h.Sum(nil)
 
 	return &Trafficd{
-		MachineId: string(bs),
+		MachineId: hex.EncodeToString(bs),
 	}, nil
 }
 
@@ -69,12 +71,12 @@ func (trf *Trafficd) RegisterHost(ctx context.Context, client apiv1.EventService
 }
 
 func (trf *Trafficd) StreamEvents(ctx context.Context, client apiv1.EventServiceClient) error {
-	stream, err := client.SendEvent(ctx)
+	stream, err := client.SendEvent(context.Background())
 	if err != nil {
 		return fmt.Errorf("error getting stream: %w", err)
 	}
 
-	t := time.NewTicker(10 * time.Second)
+	t := time.NewTicker(5 * time.Second)
 
 Loop:
 	for {
@@ -96,10 +98,11 @@ Loop:
 				continue
 			}
 		case <-ctx.Done():
-			_, _ = stream.CloseAndRecv()
 			break Loop
 		}
 	}
 
+	res, _ := stream.CloseAndRecv()
+	log.Info().Msgf("total successful events sent: %d", res.EventsTotal)
 	return nil
 }
