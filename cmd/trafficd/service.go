@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
-	"encoding/gob"
 	"encoding/hex"
 	"fmt"
 	"net/url"
@@ -71,6 +69,8 @@ func (trf *Trafficd) RegisterHost(ctx context.Context, client apiv1.EventService
 }
 
 func (trf *Trafficd) StreamEvents(ctx context.Context, client apiv1.EventServiceClient) error {
+	// Cancelling the contxt here would result in an error returned from the server,
+	// so we pass a new context and handle the stream close later on.
 	stream, err := client.SendEvent(context.Background())
 	if err != nil {
 		return fmt.Errorf("error getting stream: %w", err)
@@ -82,17 +82,12 @@ Loop:
 	for {
 		select {
 		case <-t.C:
-			var buf bytes.Buffer
-			enc := gob.NewEncoder(&buf)
-			if err := enc.Encode(&apiv1.NetworkEvent{}); err != nil {
-				log.Error().Err(err).Msg("error serializing event data")
+			req, err := GenerateRandomEvent(trf.MachineId)
+			if err != nil {
+				log.Error().Err(err).Msg("error generating event")
 				continue
 			}
-			req := &apiv1.SendEventRequest{
-				Type:      apiv1.EventType_EVENT_TYPE_NETWORK,
-				MachineId: trf.MachineId,
-				Data:      buf.Bytes(),
-			}
+
 			if err := stream.Send(req); err != nil {
 				log.Error().Err(err).Msg("error sending event")
 				continue
@@ -102,7 +97,11 @@ Loop:
 		}
 	}
 
-	res, _ := stream.CloseAndRecv()
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		return fmt.Errorf("error closing stream: %w", err)
+	}
+
 	log.Info().Msgf("total successful events sent: %d", res.EventsTotal)
 	return nil
 }

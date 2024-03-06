@@ -35,7 +35,7 @@ func run(ctx context.Context, s *service.Service) error {
 
 	// Create a gRPC server and register the service.
 	grpcSrv := pgrpc.NewServer(opts)
-	grpcSrv.RegisterService(&apiv1.EventService_ServiceDesc, new(grpcServer))
+	grpcSrv.RegisterService(&apiv1.EventService_ServiceDesc, new(GrpcServer))
 
 	// Start the gRPC server in the background.
 	go s.ServeGRPC(ctx, grpcSrv)
