@@ -53,7 +53,7 @@ func TestLoadGrpcServerConfig(t *testing.T) {
 	s.LoadGrpcServerConfig()
 
 	// Assert loaded config is as expected.
-	assert.Equal(t, s.Config().Get(config.KeyGrpcTLSCA), "/path/to/ca")
+	assert.Equal(t, s.Config().Get(config.KeyGrpcTlsCA), "/path/to/ca")
 	assert.Equal(t, s.Config().Get(config.KeyGrpcServerPort), "8002")
 	assert.Equal(t, s.Config().Get(config.KeyGrpcServerCert), "/path/to/cert")
 	assert.Equal(t, s.Config().Get(config.KeyGrpcServerKey), "/path/to/key")
@@ -65,13 +65,15 @@ func TestLoadGrpcClientConfig(t *testing.T) {
 	t.Setenv("PLAT_GRPC_TLS_CA", "/path/to/ca")
 	t.Setenv("PLAT_GRPC_CLIENT_CERT", "/path/to/cert")
 	t.Setenv("PLAT_GRPC_CLIENT_KEY", "/path/to/key")
+	t.Setenv("PLAT_GRPC_CLIENT_TIMEOUT", "30s")
 
 	// Create a new service and load grpc client config.
 	s := New("grpc-client")
 	s.LoadGrpcClientConfig()
 
 	// Assert loaded config is as expected.
-	assert.Equal(t, s.Config().Get(config.KeyGrpcTLSCA), "/path/to/ca")
+	assert.Equal(t, s.Config().Get(config.KeyGrpcTlsCA), "/path/to/ca")
 	assert.Equal(t, s.Config().Get(config.KeyGrpcClientCert), "/path/to/cert")
 	assert.Equal(t, s.Config().Get(config.KeyGrpcClientKey), "/path/to/key")
+	assert.Equal(t, s.Config().Get(config.KeyGrpcClientTimeout), "30s")
 }

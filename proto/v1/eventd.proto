@@ -4,15 +4,61 @@ package proto.v1;
 
 option go_package = "github.com/loshz/platform/internal/api/v1;apiv1";
 
+// EventService takes host level events.
 service EventService {
-  // Event takes host level events.
-  rpc Event(EventRequest) returns (EventResponse) {}
+  rpc RegisterHost(RegisterHostRequest) returns (RegisterHostResponse) {}
+  rpc SendEvent(stream SendEventRequest) returns (SendEventResponse) {}
 }
 
-message EventRequest {
-  string hostname = 1;
+message Host {
+  string machine_id = 1;
+  string hostname = 2;
 }
 
-message EventResponse {
-  string uuid = 1;
+message RegisterHostRequest {
+  Host host = 1;
+  int64 timestamp = 2;
+}
+
+message RegisterHostResponse {
+  string machine_id = 1;
+}
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_NETWORK = 1;
+}
+
+message SendEventRequest {
+  string machine_id = 1;
+  EventType type = 2;
+  bytes data = 3;
+}
+
+message SendEventResponse {
+  string machine_id = 1;
+  uint64 events_total = 2;
+}
+
+enum NetworkTransport {
+  NETWORK_TRANSPORT_UNSPECIFIED = 0;
+  NETWORK_TRANSPORT_TCP = 1;
+  NETWORK_TRANSPORT_UDP = 2;
+}
+
+message NetworkEvent {
+  NetworkTransport transport = 1;
+  IP source_ip = 2;
+  uint32 source_port = 3;
+  IP dest_ip = 4;
+  uint32 dest_port = 5;
+}
+
+message IP {
+  oneof address {
+    // IPv4 [4]byte
+    fixed32 v4 = 1;
+    // IPv6 [16]byte
+    bytes v6 = 2;
+  }
 }

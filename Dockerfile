@@ -1,7 +1,7 @@
 #################
 # Build stage 0 #
 #################
-FROM golang:1.21-alpine3.19
+FROM golang:1.22-alpine3.19
 
 # Install build dependencies
 RUN apk --no-cache add build-base
@@ -13,7 +13,7 @@ COPY . .
 ARG BUILD_NUMBER
 
 # Build binaries
-RUN BUILD_NUMBER=${BUILD_NUMBER} BIN_DIR=/go/bin/platform make go/build
+RUN BUILD_NUMBER=${BUILD_NUMBER} BIN_DIR=/go/bin/platform/ make go/build
 
 #################
 # Build stage 1 #

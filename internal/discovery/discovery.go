@@ -13,6 +13,12 @@ import (
 	apiv1 "github.com/loshz/platform/internal/api/v1"
 )
 
+type ServiceDiscoverer interface {
+	Register(ctx context.Context, service *apiv1.Service) error
+	Deregister(ctx context.Context, service_id string) error
+	Lookup(ctx context.Context, service string) ([]*apiv1.Service, error)
+}
+
 type Service struct {
 	client apiv1.DiscoveryServiceClient
 }

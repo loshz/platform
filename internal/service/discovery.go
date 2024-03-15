@@ -26,7 +26,7 @@ func (s *Service) StartDiscovery(ctx context.Context) error {
 	}
 
 	// Start the discovery service with given credentials.
-	return s.Discovery().Start(ctx, s.Config().String(config.KeyServiceDiscoveryAddr), s.Creds().GrpcClient())
+	return s.ds.Start(ctx, s.Config().String(config.KeyServiceDiscoveryAddr), s.Creds().GrpcClient())
 }
 
 // RegisterDiscovery attempts to periodically register a service with the discovery service.
@@ -41,7 +41,7 @@ func (s *Service) RegisterDiscovery(ctx context.Context) {
 
 	// Create a timer with a small initial tick to allow service processes to start
 	// before registering for discovery.
-	t := time.NewTimer(5 * time.Second)
+	t := time.NewTimer(3 * time.Second)
 	defer t.Stop()
 
 	// Get service details from config.

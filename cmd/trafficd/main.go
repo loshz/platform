@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 
 	apiv1 "github.com/loshz/platform/internal/api/v1"
@@ -24,41 +23,45 @@ func main() {
 }
 
 func run(ctx context.Context, s *service.Service) error {
+	s.Scheduler().Add(1)
+
 	go func() {
+		defer s.Scheduler().Done()
+
 		// TODO: refactor this whole function to use periodic refresh and retries.
-		time.Sleep(10 * time.Second)
+		time.Sleep(5 * time.Second)
+
+		trf, err := NewTrafficd()
+		if err != nil {
+			s.Error(fmt.Errorf("error initializing traffic service: %w", err))
+			return
+		}
 
 		// Get eventd address.
-		svcs, err := s.Discovery().Lookup(context.Background(), "eventd")
+		eventd, err := trf.GetEventdAddr(s.Discovery())
 		if err != nil {
 			s.Error(fmt.Errorf("error getting eventd service details from discovery: %w", err))
 			return
 		}
 
-		// TODO: perform sanity check on returned eventd services.
-		eventd := fmt.Sprintf("%s:%d", svcs[0].Address, svcs[0].GrpcPort)
-		conn, err := grpc.Dial(eventd, grpc.WithTransportCredentials(s.Creds().GrpcClient()))
+		conn, err := grpc.DialContext(ctx, eventd.String(), grpc.WithTransportCredentials(s.Creds().GrpcClient()))
 		if err != nil {
 			s.Error(fmt.Errorf("error dialing eventd: %w", err))
 			return
 		}
+		defer conn.Close()
 		client := apiv1.NewEventServiceClient(conn)
 
-		t := time.NewTicker(10 * time.Second)
-		for {
-			select {
-			case <-t.C:
-				res, err := client.Event(context.Background(), &apiv1.EventRequest{Hostname: "blah"})
-				if err != nil {
-					log.Error().Err(err).Msg("error making request to eventd")
-					continue
-				}
+		// Register the machine details before sending events.
+		if err := trf.RegisterHost(ctx, client); err != nil {
+			s.Error(fmt.Errorf("error registering machine: %w", err))
+			return
+		}
 
-				log.Info().Msgf("eventd response: %s", res.Uuid)
-			case <-ctx.Done():
-				conn.Close()
-				return
-			}
+		// Initiate stream and start sending events.
+		if err := trf.StreamEvents(ctx, client); err != nil {
+			s.Error(fmt.Errorf("error streaming events: %w", err))
+			return
 		}
 	}()
 
